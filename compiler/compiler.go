@@ -6,7 +6,6 @@ import (
 )
 
 type Compiler struct {
-	Lexer  lexer.Lexer
 	Source string
 }
 
@@ -24,11 +23,7 @@ func (c Compiler) extractCommandLineArguments() {}
 func (c Compiler) compile(source string) {
 	syntaxBuilder := parser.NewSyntaxBuilder()
 	p := parser.New(syntaxBuilder)
-	l := lexer.New(p)
-	l.Lex(source)
-
-	p.HandleEvent(parser.EOF, -1, -1)
-
+	lexer.New(p, source)
 }
 
 func (c Compiler) getSourceCode() string {
