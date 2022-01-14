@@ -2,7 +2,6 @@ package parser
 
 import (
 	"punch/lexer"
-	"unicode"
 )
 
 type Parser struct {
@@ -14,108 +13,92 @@ func New(builder Builder) Parser {
 }
 
 func (p Parser) Collect(token lexer.Token) {
-	p.evaluateToken(token)
-}
-
-func (p Parser) evaluateToken(token lexer.Token) {
-	if p.isIdentifier(token) {
-		p.Name(token)
-	} else if p.isString(token) {
-		p.String(token)
-	} else if p.isSingleChar(token) {
-		p.evaluateSingleChar(token)
-	} else {
-		// p.HandleEventError(event, token)
-	}
-}
-
-func (p Parser) evaluateSingleChar(token lexer.Token) {
-	switch token.Text[0] {
-	case '{':
-		p.OpenBrace(token)
-	case '}':
-		p.ClosedBrace(token)
-	case '(':
-		p.OpenParen(token)
-	case ')':
-		p.ClosedParen(token)
-	case '.':
-		p.Dot(token)
-	case ';':
+	switch token.Literal {
+	case lexer.EOF:
+		p.eof(token)
+	case lexer.INT:
+		p.int(token)
+	case lexer.STRING:
+		p.string(token)
+	case lexer.ASSIGN:
+		p.assign(token)
+	case lexer.PLUS:
+		p.plus(token)
+	case lexer.COMMA:
+		p.comma(token)
+	case lexer.SEMICOLON:
+		break
+	case lexer.LPAREN:
+		p.openParen(token)
+	case lexer.RPAREN:
+		p.closedParen(token)
+	case lexer.LBRACE:
+		p.openBrace(token)
+	case lexer.RBRACE:
+		p.closedBrace(token)
+	case lexer.FUNCTION:
+		p.name(token)
+	case lexer.LET:
+		p.name(token)
+	case lexer.PRINT:
+		p.name(token)
+	case lexer.RETURN:
+		p.name(token)
+	case lexer.DOT:
+		p.dot(token)
+	case lexer.ILLEGAL:
+		p.error(token)
 	default:
+		p.error(token)
 	}
 }
 
-func (p Parser) isIdentRune(ch rune, i int) bool {
-	return ch == '%' && i == 0 || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0
+func (p Parser) eof(token lexer.Token) {
+	p.HandleEvent(EOF, token)
 }
-
-func (p Parser) isIdentifier(token lexer.Token) bool {
-	for i, k := range token.Text {
-		if !p.isIdentRune(k, i) {
-			return false
-		}
-	}
-
-	return true
+func (p Parser) int(token lexer.Token) {
+	p.HandleEvent(INT, token)
 }
-
-func (p Parser) isString(token lexer.Token) bool {
-	return token.Text[0] == '"' && token.Text[len(token.Text)-1] == '"'
+func (p Parser) assign(token lexer.Token) {
+	p.HandleEvent(ASSIGN, token)
 }
-
-func (p Parser) isSingleChar(token lexer.Token) bool {
-	return len(token.Text) == 1
+func (p Parser) comma(token lexer.Token) {
+	p.HandleEvent(COMMA, token)
 }
-
-func (p Parser) OpenBrace(token lexer.Token) {
+func (p Parser) openBrace(token lexer.Token) {
 	p.HandleEvent(OPEN_BRACE, token)
-	println(token.String(), "-> openBrace")
 }
-func (p Parser) ClosedBrace(token lexer.Token) {
+func (p Parser) closedBrace(token lexer.Token) {
 	p.HandleEvent(CLOSED_BRACE, token)
-	println(token.String(), "-> closedBrace")
 }
-func (p Parser) OpenParen(token lexer.Token) {
+func (p Parser) openParen(token lexer.Token) {
 	p.HandleEvent(OPEN_PAREN, token)
-	println(token.String(), "-> openParen")
 }
-func (p Parser) ClosedParen(token lexer.Token) {
+func (p Parser) closedParen(token lexer.Token) {
 	p.HandleEvent(CLOSED_PAREN, token)
-	println(token.String(), "-> closeParen")
 }
-func (p Parser) OpenAngle(token lexer.Token) {
-	p.HandleEvent(OPEN_ANGLE, token)
-	println(token.String(), "-> openangel")
-}
-func (p Parser) ClosedAngel(token lexer.Token) {
-	p.HandleEvent(CLOSED_ANGLE, token)
-	println(token.String(), "-> closedangel")
-}
-func (p Parser) Dot(token lexer.Token) {
+func (p Parser) dot(token lexer.Token) {
 	p.HandleEvent(DOT, token)
-	println(token.String(), "-> dot")
 }
-func (p Parser) Dash(token lexer.Token) {
+func (p Parser) plus(token lexer.Token) {
+	p.HandleEvent(PLUS, token)
+}
+func (p Parser) dash(token lexer.Token) {
 	p.HandleEvent(DASH, token)
-	println(token.String(), "-> dash")
 }
-func (p Parser) Colon(token lexer.Token) {
+func (p Parser) colon(token lexer.Token) {
 	p.HandleEvent(COLON, token)
-	println(token.String(), "-> colon")
 }
-func (p Parser) Name(token lexer.Token) {
-	println(token.String(), "-> identifier")
+func (p Parser) name(token lexer.Token) {
 	p.HandleEvent(NAME, token)
 }
-func (p Parser) String(token lexer.Token) {
-	println(token.String(), "-> string")
+func (p Parser) string(token lexer.Token) {
 	p.HandleEvent(STRING, token)
 }
-func (p Parser) Error(token lexer.Token) {
-	// p.Builder.SyntaxError(token.Position)
+func (p Parser) error(token lexer.Token) {
+	println("ERROR -> ", token.Literal)
 }
 func (p Parser) HandleEvent(event ParserEvent, token lexer.Token) {
-	// println(event, token.String())
+	println(event, token.String())
 }
 func (p Parser) HandleEventError(event ParserEvent, token lexer.Token) {}
