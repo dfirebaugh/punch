@@ -13,7 +13,7 @@ func New(builder Builder) Parser {
 }
 
 func (p Parser) Collect(token lexer.Token) {
-	switch token.Literal {
+	switch token.Type {
 	case lexer.EOF:
 		p.eof(token)
 	case lexer.INT:
@@ -96,7 +96,7 @@ func (p Parser) string(token lexer.Token) {
 	p.HandleEvent(STRING, token)
 }
 func (p Parser) error(token lexer.Token) {
-	println("ERROR -> ", token.Literal)
+	println("ERROR -> ", token.String())
 }
 func (p Parser) HandleEvent(event ParserEvent, token lexer.Token) {
 	println(event, token.String())

@@ -52,5 +52,5 @@ var keywords = map[TokenType]string{
 
 // String will format a token as a String so that it can pretty print.
 func (t Token) String() string {
-	return fmt.Sprintf("%d:%d: %s", t.Position.Line, t.Position.Offset, t.Text)
+	return fmt.Sprintf("%d:%d: | type: %s | literal: %s |", t.Position.Line, t.Position.Offset, t.Type, t.Text)
 }

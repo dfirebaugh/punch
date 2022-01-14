@@ -27,11 +27,14 @@ func New(collector TokenCollector, source string) lexer {
 
 func (l *lexer) run() {
 	for tok := l.scanner.Scan(); tok != scanner.EOF; tok = l.scanner.Scan() {
-		l.Collector.Collect(Token{
+		token := Token{
 			Literal:  l.scanner.TokenText(),
 			Text:     l.scanner.TokenText(),
-			Position: l.scanner.Position},
-		)
+			Position: l.scanner.Position,
+		}
+
+		token.Type = l.evaluateTokenType(token)
+		l.Collector.Collect(token)
 	}
 	l.Collector.Collect(Token{
 		Literal:  "",
