@@ -11,12 +11,7 @@ func (t Token) String() string {
 	return fmt.Sprintf("%d:%d:%d: | type: %s | literal: %q", t.Position.Line, t.Position.Column, t.Position.Offset, t.Type, t.Literal)
 }
 
-// Function to check if a given token is a keyword
 func (t Token) IsKeyword() bool {
-	if t.Type != IDENTIFIER {
-		return false
-	}
-
 	_, ok := Keywords[t.Type]
 	return ok
 }
