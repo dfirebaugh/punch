@@ -1,8 +1,7 @@
 package compiler
 
 import (
-	"punch/lexer"
-	"punch/parser"
+	"punch/internal/lexer"
 )
 
 type Compiler struct {
@@ -21,9 +20,11 @@ func (c Compiler) Run() {
 func (c Compiler) extractCommandLineArguments() {}
 
 func (c Compiler) compile(source string) {
-	syntaxBuilder := parser.NewSyntaxBuilder()
-	p := parser.New(syntaxBuilder)
-	lexer.New(p, source)
+	l := lexer.New(source)
+	tokens := l.Run()
+	for _, t := range tokens {
+		println(t.String())
+	}
 }
 
 func (c Compiler) getSourceCode() string {
