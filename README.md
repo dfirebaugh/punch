@@ -1,3 +1,5 @@
+> work in progress
+
 # PUNCH 🥊
 The goal is to build a simple language that compiles directly to web assembly.
 
