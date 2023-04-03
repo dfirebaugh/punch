@@ -95,8 +95,8 @@ func TestFunctionStatement(t *testing.T) {
 		t.Fatalf("funcStmt.Parameters[1].Value not 'y'. got=%s", funcStmt.Parameters[1].Value)
 	}
 
-	if funcStmt.Body.String() != "{ { return (x + y); } }" {
-		t.Fatalf("funcStmt.Body.String() not '{ { return (x + y); } }'. got=%s", funcStmt.Body.String())
+	if funcStmt.Body.String() != "{ return (x + y); }" {
+		t.Fatalf("funcStmt.Body.String() not '{ return (x + y); }'. got=%s", funcStmt.Body.String())
 	}
 }
 

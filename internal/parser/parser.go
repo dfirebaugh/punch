@@ -162,6 +162,12 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
+	case token.SLASH_SLASH:
+		p.parseComment()
+		return nil
+	case token.SLASH_ASTERISK:
+		p.parseComment()
+		return nil
 	case token.PUB:
 		return p.parseFunctionStatement()
 	case token.FUNCTION:
@@ -268,7 +274,7 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 
 	params := p.parseFunctionParameters()
 
-	if p.peekToken.Type != token.RPAREN {
+	if p.curToken.Type != token.RPAREN {
 		return nil
 	}
 	p.nextToken()
@@ -303,6 +309,7 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 		identifiers = append(identifiers, ident)
 	}
+	p.nextToken()
 
 	return identifiers
 }
@@ -398,6 +405,38 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	}
 
 	return block
+}
+
+// parseComment skips over a comment token and moves the parser to the end of the comment.
+func (p *Parser) parseComment() {
+	if p.curToken.Type != token.SLASH_SLASH && p.curToken.Type != token.SLASH_ASTERISK {
+		return
+	}
+
+	if p.curToken.Type == token.SLASH_SLASH {
+		currentLine := p.curToken.Position.Line
+		for p.curToken.Position.Line == currentLine {
+			p.nextToken()
+		}
+	} else if p.curToken.Type == token.SLASH_ASTERISK {
+		// Advance past the opening token
+		p.nextToken()
+
+		// Loop until we find the closing token
+		for !(p.curTokenIs(token.ASTERISK) && p.peekTokenIs(token.SLASH)) {
+			println(p.curToken.Type)
+			if p.curTokenIs(token.EOF) {
+				return
+			}
+			println(p.curToken.Type)
+			p.nextToken()
+		}
+
+		println(p.curToken.Type)
+		// Advance past the closing token
+		p.nextToken()
+		println(p.curToken.Type)
+	}
 }
 
 func (p *Parser) expectPeek(t token.Type) bool {

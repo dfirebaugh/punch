@@ -1,5 +1,4 @@
 > work in progress
-> Work in progress
 
 # PUNCH 🥊
 The goal is to build a simple language that compiles directly to WebAssembly.
@@ -48,3 +47,4 @@ Ideally, we would also be able to compile to the WebAssembly binary format with 
 - [WebAssembly Text Format (WAT)](https://webassembly.github.io/spec/core/text/index.html)
 - [WebAssembly Binary Format Specification](https://webassembly.github.io/spec/core/binary/index.html)
 - [WABT - The WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt)
+- [wat2wasm in browser](https://webassembly.github.io/wabt/demo/wat2wasm/)

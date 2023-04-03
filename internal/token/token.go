@@ -50,6 +50,9 @@ const (
 	GT              = ">"
 	GT_EQUALS       = ">="
 	QUESTION        = "?"
+	SLASH_SLASH     = "//"
+	SLASH_ASTERISK  = "/*"
+	ASTERISK_SLASH  = "/*"
 
 	// Delimiters
 	COMMA     = ","

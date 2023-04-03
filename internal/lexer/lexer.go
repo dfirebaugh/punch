@@ -131,11 +131,21 @@ func (l *Lexer) evaluateMultiCharOperators(literal string) token.Type {
 			l.scanner.Scan()
 			return token.SLASH_EQUALS
 		}
+		if l.scanner.Peek() == rune('/') {
+			return token.SLASH_SLASH
+		}
+		if l.scanner.Peek() == rune('*') {
+			return token.SLASH_ASTERISK
+		}
 		return token.SLASH
 	case token.ASTERISK:
 		if l.scanner.Peek() == rune('=') {
 			l.scanner.Scan()
 			return token.ASTERISK_EQUALS
+		}
+		if l.scanner.Peek() == rune('/') {
+			l.scanner.Scan()
+			return token.ASTERISK_SLASH
 		}
 		return token.ASTERISK
 	case token.PLUS:

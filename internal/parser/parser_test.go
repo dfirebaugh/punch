@@ -346,21 +346,6 @@ func TestParseBlockStatement(t *testing.T) {
 	}
 }
 
-func testBlockStatement(t *testing.T, stmt ast.Statement, expectedLen int) bool {
-	blockStmt, ok := stmt.(*ast.BlockStatement)
-	if !ok {
-		t.Errorf("stmt is not ast.BlockStatement. got=%T", stmt)
-		return false
-	}
-
-	if len(blockStmt.Statements) != expectedLen {
-		t.Errorf("block does not contain %d statements. got=%d\n", expectedLen, len(blockStmt.Statements))
-		return false
-	}
-
-	return true
-}
-
 func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{}) bool {
 	switch v := expected.(type) {
 	case int:
@@ -407,11 +392,7 @@ func TestParseFunctionStatement(t *testing.T) {
 		t.Fatalf("Expected function body to have 1 statement, got %d", len(stmt.Body.Statements))
 	}
 
-	blockStmt, ok := stmt.Body.Statements[0].(*ast.BlockStatement)
-	if !ok {
-		t.Fatalf("Expected function body to contain a block statement, got %T", blockStmt.Statements[0])
-	}
-	returnStmt, ok := blockStmt.Statements[0].(*ast.ReturnStatement)
+	returnStmt, ok := stmt.Body.Statements[0].(*ast.ReturnStatement)
 	if !ok {
 		t.Fatalf("Expected function body to contain a return statement, got %T", stmt.Body.Statements[0])
 	}
@@ -440,6 +421,27 @@ func TestParseFunctionParameters(t *testing.T) {
 			t.Errorf("Parameter %d should have value %q, got %q", i+1, expectedParams[i], ident.Value)
 		}
 	}
+}
+
+func TestParseComment(t *testing.T) {
+	input := `function commentFn() {
+		// This is a single-line comment
+		let x = 5; // Another comment
+		/*
+		This is a multi-line comment
+		that spans multiple lines.
+		*/
+		let y = 10;
+	}`
+	expected := `function commentFn() { let x = 5;let y = 10; }`
+
+	p := New(lexer.New(input))
+
+	stmt := p.parseFunctionStatement()
+	if got := stmt.String(); got != expected {
+		t.Errorf("expected comments to be stripped out:\nwant %q\ngot  %q", expected, got)
+	}
+	println(stmt.String())
 }
 
 func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {

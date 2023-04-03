@@ -1,3 +1,13 @@
 pub function addTwo(x, y) {
 	return (x + y);
 }
+
+/*
+pub function addThree(x, y, z) {
+	return (x + y + z);
+}
+*/
+
+pub function addFour(a, b, c, d) {
+	return (a + b + c + d);
+}
