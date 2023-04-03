@@ -1,6 +1,6 @@
 package lexer
 
-import "punch/internal/token"
+import "github.com/dfirebaugh/punch/internal/token"
 
 type Collector struct {
 	result []token.Token

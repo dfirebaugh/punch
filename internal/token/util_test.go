@@ -180,3 +180,51 @@ func TestMatch(t *testing.T) {
 		t.Errorf("Match(): expected false for tokens with different positions, got true")
 	}
 }
+
+func TestIsOperator(t *testing.T) {
+	tests := []struct {
+		token Token
+		want  bool
+	}{
+		{Token{Type: PLUS}, true},
+		{Token{Type: MINUS}, true},
+		{Token{Type: ASTERISK}, true},
+		{Token{Type: SLASH}, true},
+		{Token{Type: EQ}, true},
+		{Token{Type: NOT_EQ}, true},
+		{Token{Type: LT}, true},
+		{Token{Type: GT}, true},
+		{Token{Type: ASSIGN}, true},
+		{Token{Type: INT, Literal: "42"}, false},
+		{Token{Type: FLOAT, Literal: "3.14"}, false},
+		{Token{Type: IDENTIFIER, Literal: "foo"}, false},
+	}
+
+	for _, tc := range tests {
+		got := tc.token.IsOperator()
+		if got != tc.want {
+			t.Errorf("IsOperator(%v) = %v, want %v", tc.token, got, tc.want)
+		}
+	}
+}
+
+func TestIsNumber(t *testing.T) {
+	tests := []struct {
+		token Token
+		want  bool
+	}{
+		{Token{Type: INT, Literal: "42"}, true},
+		{Token{Type: FLOAT, Literal: "3.14"}, true},
+		{Token{Type: PLUS}, false},
+		{Token{Type: MINUS}, false},
+		{Token{Type: IDENTIFIER, Literal: "foo"}, false},
+		{Token{Type: ASSIGN}, false},
+	}
+
+	for _, tc := range tests {
+		got := tc.token.IsNumber()
+		if got != tc.want {
+			t.Errorf("IsNumber(%v) = %v, want %v", tc.token, got, tc.want)
+		}
+	}
+}

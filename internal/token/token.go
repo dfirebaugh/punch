@@ -4,10 +4,8 @@ import (
 	"text/scanner"
 )
 
-// Type represents the type of a token.
 type Type string
 
-// Token struct holds the information about a token.
 type Token struct {
 	Type     Type
 	Literal  string
@@ -31,39 +29,62 @@ const (
 	STRING = "STRING"
 
 	// Operators
-	ASSIGN   = "="
-	PLUS     = "+"
-	MINUS    = "-"
-	ASTERISK = "*"
-	SLASH    = "/"
-	EQ       = "=="
-	NOT_EQ   = "!="
-	LT       = "<"
-	GT       = ">"
+	ASSIGN          = "="
+	PLUS            = "+"
+	PLUS_EQUALS     = "+="
+	MINUS           = "-"
+	MINUS_EQUALS    = "-="
+	ASTERISK        = "*"
+	ASTERISK_EQUALS = "*="
+	SLASH           = "/"
+	SLASH_EQUALS    = "/="
+	MOD             = "%"
+	AND             = "&&"
+	AMPERSAND       = "&"
+	OR              = "||"
+	PIPE            = "|"
+	EQ              = "=="
+	NOT_EQ          = "!="
+	LT              = "<"
+	LT_EQUALS       = "<="
+	GT              = ">"
+	GT_EQUALS       = ">="
+	QUESTION        = "?"
 
 	// Delimiters
 	COMMA     = ","
 	SEMICOLON = ";"
 	DOT       = "."
 
-	LPAREN = "("
-	RPAREN = ")"
-	LBRACE = "{"
-	RBRACE = "}"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 
 	// Keywords
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
 	RETURN   = "RETURN"
 	IF       = "if"
+	ELSE     = "else"
+	PUB      = "pub"
 
 	IDENTIFIER = "IDENTIFIER"
+
+	TRUE  = "true"
+	FALSE = "false"
+
+	BANG = "!"
 )
 
-// Keywords is a map of keyword token types to their language representation.
 var Keywords = map[Type]string{
 	RETURN:   "return",
 	FUNCTION: "function",
 	LET:      "let",
 	IF:       "if",
+	TRUE:     "true",
+	FALSE:    "false",
+	PUB:      "pub",
 }

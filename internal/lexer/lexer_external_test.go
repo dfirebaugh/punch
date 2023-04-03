@@ -1,9 +1,10 @@
 package lexer_test
 
 import (
-	"punch/internal/lexer"
-	"punch/internal/token"
 	"testing"
+
+	"github.com/dfirebaugh/punch/internal/lexer"
+	"github.com/dfirebaugh/punch/internal/token"
 )
 
 func TestLexer(t *testing.T) {

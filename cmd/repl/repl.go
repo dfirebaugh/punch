@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"punch/internal/repl"
+
+	"github.com/dfirebaugh/punch/internal/repl"
 )
 
 func main() {

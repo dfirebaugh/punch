@@ -3,8 +3,11 @@ package repl
 import (
 	"fmt"
 	"io"
-	"punch/internal/lexer"
 	"strings"
+
+	"github.com/dfirebaugh/punch/internal/lexer"
+	"github.com/dfirebaugh/punch/internal/parser"
+	"github.com/dfirebaugh/punch/internal/wat"
 
 	"github.com/chzyer/readline"
 )
@@ -63,10 +66,19 @@ func (repl *REPL) handleLine(line string) bool {
 	default:
 		fmt.Fprintf(repl.out, "Command entered: %s\n", line)
 		l := lexer.New(line)
+		// println("tokens:")
+		// for _, tok := range l.Run() {
+		// 	println(tok.String())
+		// }
+		p := parser.New(l)
+		program := p.ParseProgram()
 
-		for _, t := range l.Run() {
-			println(t.String())
-		}
+		println("ast:")
+		println(program.String())
+
+		println("")
+		println("wat:")
+		println(wat.GenerateWAT(program))
 	}
 	return true
 }

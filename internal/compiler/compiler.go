@@ -1,36 +1,14 @@
 package compiler
 
 import (
-	"punch/internal/lexer"
+	"github.com/dfirebaugh/punch/internal/lexer"
+	"github.com/dfirebaugh/punch/internal/parser"
+	"github.com/dfirebaugh/punch/internal/wat"
 )
 
-type Compiler struct {
-	Source string
-}
-
-func New(source string) Compiler {
-	return Compiler{
-		Source: source,
-	}
-}
-
-func (c Compiler) Run() {
-	c.compile(c.getSourceCode())
-}
-func (c Compiler) extractCommandLineArguments() {}
-
-func (c Compiler) compile(source string) {
+func Compile(source string) string {
 	l := lexer.New(source)
-	tokens := l.Run()
-	for _, t := range tokens {
-		println(t.String())
-	}
+	p := parser.New(l)
+	program := p.ParseProgram()
+	return wat.GenerateWAT(program)
 }
-
-func (c Compiler) getSourceCode() string {
-	return c.Source
-}
-func (c Compiler) reportSyntaxError() {}
-func (c Compiler) optimize()          {}
-func (c Compiler) generateCode()      {}
-func (c Compiler) createGenerator()   {}

@@ -16,6 +16,19 @@ func (t Token) IsKeyword() bool {
 	return ok
 }
 
+func (t Token) IsOperator() bool {
+	switch t.Type {
+	case ASSIGN, PLUS, MINUS, ASTERISK, SLASH, EQ, NOT_EQ, LT, GT:
+		return true
+	default:
+		return false
+	}
+}
+
+func (t Token) IsNumber() bool {
+	return t.Type == INT || t.Type == FLOAT
+}
+
 func (t Token) IsString() bool {
 	return len(t.Literal) != 0 && t.Literal[0] == '"' && t.Literal[len(t.Literal)-1] == '"'
 }

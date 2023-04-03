@@ -1,9 +1,11 @@
 package lexer
 
 import (
-	"punch/internal/token"
+	"reflect"
 	"testing"
 	"text/scanner"
+
+	"github.com/dfirebaugh/punch/internal/token"
 )
 
 type testCollector struct{}
@@ -108,27 +110,104 @@ func TestLexLetStatement(t *testing.T) {
 		}
 	}
 }
-
 func Test_evaluateType(t *testing.T) {
 	input := `= 42 3.14 "hello world" foo if`
-
 	l := New(input)
-
-	expectedTokens := []token.Token{
-		{Type: token.ASSIGN, Literal: "="},
-		{Type: token.INT, Literal: "42"},
-		{Type: token.FLOAT, Literal: "3.14"},
-		{Type: token.STRING, Literal: "\"hello world\""},
-		{Type: token.IDENTIFIER, Literal: "foo"},
-		{Type: token.IF, Literal: "if"},
+	expectedTokens := []token.Type{
+		token.ASSIGN,
+		token.INT,
+		token.FLOAT,
+		token.STRING,
+		token.IDENTIFIER,
+		token.IF,
 	}
-
-	for i, expectedToken := range expectedTokens {
-		t.Run(expectedToken.Literal, func(t *testing.T) {
-			token := l.evaluateType(expectedToken)
-			if token != expectedToken.Type {
-				t.Errorf("test %d: expected %+v but got %+v", i+1, expectedToken, token)
+	for i, expectedTokenType := range expectedTokens {
+		t.Run(string(expectedTokenType), func(t *testing.T) {
+			token := l.evaluateType(l.NextToken())
+			if token != expectedTokenType {
+				t.Errorf("test %d: expected %+v but got %+v", i+1, expectedTokenType, token)
 			}
 		})
+	}
+}
+
+func Test_isMultiCharOperator(t *testing.T) {
+	operators := []struct {
+		input string
+		want  bool
+	}{
+		{">=", true},
+		{"<=", true},
+		{"==", true},
+		{"!=", true},
+		{"+=", true},
+		{"-=", true},
+		{"*=", true},
+		{"/=", true},
+		{"|", false},
+		{"&", false},
+		{"+", false},
+		{"-", false},
+		{"*", false},
+		{"/", false},
+		{">", false},
+		{"<", false},
+		{"=", false},
+		{"!", false},
+	}
+
+	for _, tt := range operators {
+		got := Lexer{}.isMultiCharOperator(token.Type(tt.input))
+		if got != tt.want {
+			t.Errorf("isMultiCharOperator(%q) = %v, want %v", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestBooleanLiterals(t *testing.T) {
+	source := "let a = true; let b = false;"
+	expectedTokens := []token.Token{
+		{Type: token.LET, Literal: "let", Position: scanner.Position{Line: 1, Column: 1, Offset: 0}},
+		{Type: token.IDENTIFIER, Literal: "a", Position: scanner.Position{Line: 1, Column: 5, Offset: 4}},
+		{Type: token.ASSIGN, Literal: "=", Position: scanner.Position{Line: 1, Column: 7, Offset: 6}},
+		{Type: token.TRUE, Literal: "true", Position: scanner.Position{Line: 1, Column: 9, Offset: 8}},
+		{Type: token.SEMICOLON, Literal: ";", Position: scanner.Position{Line: 1, Column: 13, Offset: 12}},
+		{Type: token.LET, Literal: "let", Position: scanner.Position{Line: 1, Column: 15, Offset: 14}},
+		{Type: token.IDENTIFIER, Literal: "b", Position: scanner.Position{Line: 1, Column: 19, Offset: 18}},
+		{Type: token.ASSIGN, Literal: "=", Position: scanner.Position{Line: 1, Column: 21, Offset: 20}},
+		{Type: token.FALSE, Literal: "false", Position: scanner.Position{Line: 1, Column: 23, Offset: 22}},
+		{Type: token.SEMICOLON, Literal: ";", Position: scanner.Position{Line: 1, Column: 28, Offset: 27}},
+		{Type: token.EOF},
+	}
+
+	l := New(source)
+	tokens := l.Run()
+
+	if !reflect.DeepEqual(tokens, expectedTokens) {
+		t.Errorf("Expected tokens %v, but got %v", expectedTokens, tokens)
+	}
+}
+
+func TestEvaluateKeyword(t *testing.T) {
+	l := New("")
+
+	tests := []struct {
+		input    string
+		expected token.Type
+	}{
+		{"function", token.FUNCTION},
+		{"let", token.LET},
+		{"return", token.RETURN},
+		{"if", token.IF},
+		{"true", token.TRUE},
+		{"false", token.FALSE},
+		{"foo", token.IDENTIFIER},
+	}
+
+	for _, tt := range tests {
+		actual := l.evaluateKeyword(tt.input)
+		if actual != tt.expected {
+			t.Errorf("For input '%s', expected %v but got %v", tt.input, tt.expected, actual)
+		}
 	}
 }
