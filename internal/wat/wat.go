@@ -103,8 +103,8 @@ func generateStatement(stmt ast.Statement) string {
 
 func generateExpression(expr ast.Expression) string {
 	switch e := expr.(type) {
-	case *ast.NumberLiteral:
-		return fmt.Sprintf("(i32.const %s)", e.Value)
+	case *ast.IntegerLiteral:
+		return fmt.Sprintf("(i32.const %d)", e.Value)
 	case *ast.Boolean:
 		if e.Value {
 			return "(i32.const 1)"
@@ -147,12 +147,12 @@ func generateExpression(expr ast.Expression) string {
 		var out strings.Builder
 		out.WriteString(fmt.Sprintf("%s\n", generateExpression(e.Condition)))
 		out.WriteString("(if\n")
-		out.WriteString(fmt.Sprintf("(result i32)\n"))
-		out.WriteString(fmt.Sprintf("(param i32 i32)\n"))
-		out.WriteString(fmt.Sprintf("(export \"add\")\n"))
-		out.WriteString(fmt.Sprintf("(local.get 0)\n"))
-		out.WriteString(fmt.Sprintf("(local.get 1)\n"))
-		out.WriteString(fmt.Sprintf("(i32.add)\n"))
+		out.WriteString("(result i32)\n")
+		out.WriteString("(param i32 i32)\n")
+		out.WriteString("(export \"add\")\n")
+		out.WriteString("(local.get 0)\n")
+		out.WriteString("(local.get 1)\n")
+		out.WriteString("(i32.add)\n")
 		out.WriteString(")\n")
 		return out.String()
 	case *ast.FunctionCall:

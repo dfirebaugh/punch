@@ -8,12 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNumberLiteral(t *testing.T) {
-	nl := &NumberLiteral{Token: token.Token{Type: token.INT, Literal: "123"}, Value: "123"}
-	assert.Equal(t, "123", nl.String())
-	assert.Equal(t, "123", nl.TokenLiteral())
-}
-
 func TestIntegerLiteral(t *testing.T) {
 	il := &IntegerLiteral{Token: token.Token{Type: token.INT, Literal: "123"}, Value: 123}
 	assert.Equal(t, "123", il.String())

@@ -8,22 +8,6 @@ import (
 	"github.com/dfirebaugh/punch/internal/token"
 )
 
-type NumberLiteral struct {
-	Token token.Token
-	Value string
-}
-
-func (nl *NumberLiteral) expressionNode() {}
-
-func (nl *NumberLiteral) TokenLiteral() string { return nl.Token.Literal }
-
-func (nl *NumberLiteral) String() string {
-	if nl != nil {
-		return nl.Value
-	}
-	return ""
-}
-
 type IntegerLiteral struct {
 	Token token.Token
 	Value int64

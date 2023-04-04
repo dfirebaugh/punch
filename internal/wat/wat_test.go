@@ -16,8 +16,8 @@ func TestGenerateWAT(t *testing.T) {
 			Statements: []ast.Statement{
 				&ast.LetStatement{
 					Name: &ast.Identifier{Value: "x"},
-					Value: &ast.NumberLiteral{
-						Value: "10",
+					Value: &ast.IntegerLiteral{
+						Value: 10,
 					},
 				},
 			},
@@ -55,8 +55,8 @@ func TestGenerateWAT(t *testing.T) {
 					Statements: []ast.Statement{
 						&ast.LetStatement{
 							Name: &ast.Identifier{Value: "x"},
-							Value: &ast.NumberLiteral{
-								Value: "10",
+							Value: &ast.IntegerLiteral{
+								Value: 10,
 							},
 						},
 						&ast.ReturnStatement{

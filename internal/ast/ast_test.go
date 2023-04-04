@@ -18,9 +18,9 @@ func TestLetStatementString(t *testing.T) {
 					Token: token.Token{Type: token.IDENTIFIER, Literal: "myVar"},
 					Value: "myVar",
 				},
-				Value: &ast.NumberLiteral{
+				Value: &ast.IntegerLiteral{
 					Token: token.Token{Type: token.INT, Literal: "42"},
-					Value: "42",
+					Value: 42,
 				},
 			},
 		},
@@ -37,9 +37,9 @@ func TestReturnStatementString(t *testing.T) {
 		Statements: []ast.Statement{
 			&ast.ReturnStatement{
 				Token: token.Token{Type: token.RETURN, Literal: "return"},
-				ReturnValue: &ast.NumberLiteral{
+				ReturnValue: &ast.IntegerLiteral{
 					Token: token.Token{Type: token.INT, Literal: "42"},
-					Value: "42",
+					Value: 42,
 				},
 			},
 		},
