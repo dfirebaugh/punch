@@ -1,26 +1,27 @@
 package ast
 
-// Node is the interface that all AST nodes must implement.
+import (
+	"bytes"
+	"encoding/json"
+)
+
 type Node interface {
-	TokenLiteral() string // Returns the literal value of the node's token
-	String() string       // Returns a string representation of the node for debugging purposes
+	TokenLiteral() string
+	String() string
 }
 
-// Statement represents a statement in the code.
 type Statement interface {
 	Node
 	statementNode()
 }
 
-// Expression represents an expression in the code.
 type Expression interface {
 	Node
 	expressionNode()
 }
 
-// Program represents a complete program in the code.
 type Program struct {
-	Statements []Statement // The statements in the program
+	Statements []Statement
 }
 
 func (p *Program) TokenLiteral() string {
@@ -37,4 +38,25 @@ func (p *Program) String() string {
 		out += "\n"
 	}
 	return out
+}
+
+func (p *Program) JSON() (string, error) {
+	b, err := json.Marshal(p)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func (p *Program) JSONPretty() (string, error) {
+	b, err := json.MarshalIndent(p, "", "    ")
+	if err != nil {
+		return "", err
+	}
+	var out bytes.Buffer
+	err = json.Indent(&out, b, "", "    ")
+	if err != nil {
+		return "", err
+	}
+	return out.String(), nil
 }

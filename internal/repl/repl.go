@@ -74,7 +74,11 @@ func (repl *REPL) handleLine(line string) bool {
 		program := p.ParseProgram()
 
 		println("ast:")
-		println(program.String())
+		json, err := program.JSONPretty()
+		if err != nil {
+			println(err.Error())
+		}
+		println(json)
 
 		println("")
 		println("wat:")
