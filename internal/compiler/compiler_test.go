@@ -21,6 +21,4 @@ pub fn addFour(a, b, c, d) {
 	`)
 
 	println(program)
-
-	t.Fail()
 }
