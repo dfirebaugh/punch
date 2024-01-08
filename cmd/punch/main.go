@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/dfirebaugh/punch/internal/compiler"
@@ -20,17 +19,20 @@ func main() {
 	}
 
 	filename := flag.Arg(0)
-	fileContents, err := ioutil.ReadFile(filename)
+	fileContents, err := os.ReadFile(filename)
 	if err != nil {
 		panic(err)
 	}
 
-	var output string
+	wat, wasm := compiler.Compile(string(fileContents))
 	if outputFile == "" {
-		output = compiler.Compile(string(fileContents))
-		fmt.Println(output)
+		fmt.Println(wat)
 	} else {
-		err = ioutil.WriteFile(outputFile, []byte(compiler.Compile(string(fileContents))), 0644)
+		err = os.WriteFile(outputFile+".wat", []byte(wat), 0644)
+		if err != nil {
+			panic(err)
+		}
+		err = os.WriteFile(outputFile+".wasm", wasm, 0644)
 		if err != nil {
 			panic(err)
 		}

@@ -1,0 +1,13 @@
+pub fn addTwo(x, y) {
+	return (x + y);
+}
+
+/*
+fn addThree(x, y, z) {
+	return (x + y + z);
+}
+*/
+
+pub fn addFour(a, b, c, d) {
+	return (a + b + c + d);
+}

@@ -16,24 +16,15 @@ Also, I'm just kind of toying around with making a language.
 * Runtimes for different use cases.
 * Functions are private by default and can easily be exported with the `pub` keyword.
 
-### Example
-
 The ideal syntax will look similar to below.
-
-```punch
+```
 // addTwo is an exported function that adds two ints together and returns the result.
 pub int addTwo(a int, b int) {
     return a + b;
 }
 ```
 
-The above function should build to WAT with the following command:
-
-```
-punch -o addTwo.wat ./examples/addTwo.pn
-```
-
-output:
+which should output something like the following:
 ```wat
 (module
     (func $addTwo (export "addTwo")(param $x i32)(param $y i32)(result i32)
@@ -41,7 +32,19 @@ output:
     )
 )
 ```
-Ideally, we would also be able to compile to the WebAssembly binary format with the build tool.
+
+### Example
+
+Compile a file to wasm:
+
+```bash
+punch -o ./examples/adder/adder ./examples/adder/adder.pn
+```
+
+This will output a `adder.wat` file and an `adder.wasm` file.
+
+To execute the `.wasm` file, you can run `go run ./examples/adder/`.
+`./examples/adder/main.go` uses wasmtime to load in the wasm file and execute functions that it exports.
 
 ## Reference
 - [WebAssembly Text Format (WAT)](https://webassembly.github.io/spec/core/text/index.html)

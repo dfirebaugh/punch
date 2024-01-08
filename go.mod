@@ -11,6 +11,7 @@ require (
 )
 
 require (
+	github.com/bytecodealliance/wasmtime-go v1.0.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/sys v0.6.0 // indirect
 )
