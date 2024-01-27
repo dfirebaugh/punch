@@ -172,36 +172,6 @@ func (i *IndexExpression) String() string {
 	return out.String()
 }
 
-type FunctionCall struct {
-	FunctionName string
-	Arguments    []Expression
-}
-
-func (f *FunctionCall) expressionNode() {}
-
-func (f *FunctionCall) TokenLiteral() string {
-	if f == nil {
-		return ""
-	}
-	return "function call"
-}
-
-func (f *FunctionCall) String() string {
-	if f == nil {
-		return ""
-	}
-	args := make([]string, len(f.Arguments))
-	for i, a := range f.Arguments {
-		args[i] = a.String()
-	}
-	var out bytes.Buffer
-	out.WriteString(f.FunctionName)
-	out.WriteString("(")
-	out.WriteString(strings.Join(args, ", "))
-	out.WriteString(")")
-	return out.String()
-}
-
 type PrefixExpression struct {
 	Token    token.Token
 	Operator token.Token

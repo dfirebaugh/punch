@@ -553,6 +553,31 @@ func TestStructDeclaration(t *testing.T) {
 	}
 }
 
+func TestParseStructLiteral(t *testing.T) {
+	input := `struct message {
+		sender i32
+		recipient i8
+		body string
+	}
+	message msg = message{
+		sender: 5,
+		recipient: 10,
+		body: "hello, world!"
+	}
+	`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+
+	for _, s := range program.Statements {
+		println(s.String())
+	}
+
+	for _, e := range p.Errors() {
+		t.Errorf("parser has errors: %s", e)
+	}
+}
+
 func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
 	lit, ok := il.(*ast.IntegerLiteral)
 	if !ok {

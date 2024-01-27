@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"bytes"
 	"strings"
 
 	"github.com/dfirebaugh/punch/internal/token"
@@ -47,5 +48,35 @@ func (fd *FunctionDeclaration) String() string {
 	out.WriteString(") ")
 	out.WriteString(fd.Body.String())
 
+	return out.String()
+}
+
+type FunctionCall struct {
+	FunctionName string
+	Arguments    []Expression
+}
+
+func (f *FunctionCall) expressionNode() {}
+
+func (f *FunctionCall) TokenLiteral() string {
+	if f == nil {
+		return ""
+	}
+	return "function call"
+}
+
+func (f *FunctionCall) String() string {
+	if f == nil {
+		return ""
+	}
+	args := make([]string, len(f.Arguments))
+	for i, a := range f.Arguments {
+		args[i] = a.String()
+	}
+	var out bytes.Buffer
+	out.WriteString(f.FunctionName)
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
 	return out.String()
 }

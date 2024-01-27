@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/dfirebaugh/punch/internal/token"
 )
@@ -55,5 +56,32 @@ func (sd *StructDeclaration) String() string {
 		out.WriteString("\n")
 	}
 	out.WriteString("}")
+	return out.String()
+}
+
+type StructLiteral struct {
+	Token      token.Token
+	Fields     map[string]Expression
+	StructName *Identifier
+}
+
+func (sl *StructLiteral) expressionNode() {}
+
+func (sl *StructLiteral) TokenLiteral() string {
+	return sl.Token.Literal
+}
+
+func (sl *StructLiteral) String() string {
+	var out bytes.Buffer
+	if sl.StructName != nil {
+		out.WriteString(sl.StructName.String())
+	}
+	out.WriteString("{ ")
+	fields := []string{}
+	for name, expr := range sl.Fields {
+		fields = append(fields, name+": "+expr.String())
+	}
+	out.WriteString(strings.Join(fields, ", "))
+	out.WriteString(" }")
 	return out.String()
 }

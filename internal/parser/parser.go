@@ -18,6 +18,8 @@ type Parser struct {
 	infixParseFns  map[token.Type]infixParseFn
 
 	deferStack []ast.Statement
+
+	definedTypes map[string]bool
 }
 
 type (
@@ -26,7 +28,11 @@ type (
 )
 
 func New(l *lexer.Lexer) *Parser {
-	p := &Parser{l: l, errors: []string{}}
+	p := &Parser{
+		l:            l,
+		errors:       []string{},
+		definedTypes: make(map[string]bool),
+	}
 
 	// Register prefix parsing functions for identifiers, integers,
 	// booleans, and the negation operator.
@@ -83,9 +89,14 @@ func (p *Parser) registerInfix(tokenType token.Type, fn infixParseFn) {
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
-	if p.curToken.Type == token.ASSIGN {
+	switch p.curToken.Type {
+	case token.ASSIGN:
 		p.errors = append(p.errors, "unexpected '='")
 		return nil
+	case token.IDENTIFIER:
+		if p.peekTokenIs(token.LBRACE) {
+			return p.parseStructLiteral()
+		}
 	}
 
 	prefix := p.prefixParseFns[p.curToken.Type]
@@ -117,10 +128,19 @@ func (p *Parser) nextToken() {
 // If it isn't, it generates an error message and returns false.
 func (p *Parser) expectPeek(expectedType token.Type) bool {
 	if p.peekTokenIs(expectedType) {
-		// p.nextToken()
 		return true
 	} else {
 		fmt.Printf("Expected next token to be %s, got %s instead\n", expectedType, p.peekToken.Type)
+		p.peekError(expectedType)
+		return false
+	}
+}
+
+func (p *Parser) expectCurrentTokenIs(expectedType token.Type) bool {
+	if p.curTokenIs(expectedType) {
+		return true
+	} else {
+		fmt.Printf("Expected current token to be %s, got %s instead\n", expectedType, p.curToken.Type)
 		p.peekError(expectedType)
 		return false
 	}

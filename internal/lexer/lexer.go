@@ -184,6 +184,8 @@ func (l Lexer) evaluateSpecialCharacter(literal string) token.Type {
 		return token.COMMA
 	case token.DOT:
 		return token.DOT
+	case token.COLON:
+		return token.COLON
 	case token.SEMICOLON:
 		return token.SEMICOLON
 	case token.LPAREN:
