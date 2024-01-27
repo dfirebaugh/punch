@@ -66,10 +66,6 @@ func (repl *REPL) handleLine(line string) bool {
 	default:
 		fmt.Fprintf(repl.out, "Command entered: %s\n", line)
 		l := lexer.New(line)
-		// println("tokens:")
-		// for _, tok := range l.Run() {
-		// 	println(tok.String())
-		// }
 		p := parser.New(l)
 		program := p.ParseProgram()
 

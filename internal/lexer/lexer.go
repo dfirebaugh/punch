@@ -8,8 +8,9 @@ import (
 )
 
 type Lexer struct {
-	Collector token.TokenCollector
-	scanner   scanner.Scanner
+	Collector    token.TokenCollector
+	scanner      scanner.Scanner
+	savedScanner scanner.Scanner
 }
 
 func New(source string) *Lexer {
@@ -65,16 +66,14 @@ func (l *Lexer) evaluateType(t token.Token) token.Type {
 			return m
 		}
 		return l.evaluateSpecialCharacter(t.Literal)
-	case t.IsInt():
-		return token.INT
 	case t.IsSingleCharIdentifier():
 		return token.IDENTIFIER
-	case t.IsFloatInt():
-		return token.FLOAT
 	case t.IsString():
 		return token.STRING
 	case t.IsIdentifier():
 		return l.evaluateKeyword(t.Literal)
+	case t.IsNumber():
+		return token.NUMBER
 	default:
 		return token.ILLEGAL
 	}
@@ -204,6 +203,42 @@ func (l Lexer) evaluateSpecialCharacter(literal string) token.Type {
 
 func (l *Lexer) evaluateKeyword(literal string) token.Type {
 	switch literal {
+	case token.U8:
+		return token.U8
+	case token.U16:
+		return token.U16
+	case token.U32:
+		return token.U32
+	case token.U64:
+		return token.U64
+	case token.I8:
+		return token.I8
+	case token.I16:
+		return token.I16
+	case token.I32:
+		return token.I32
+	case token.I64:
+		return token.I64
+	case token.F8:
+		return token.F8
+	case token.F16:
+		return token.F16
+	case token.F32:
+		return token.F32
+	case token.F64:
+		return token.F64
+	case token.STRING:
+		return token.STRING
+	case token.Keywords[token.STRUCT]:
+		return token.STRUCT
+	case token.Keywords[token.INTERFACE]:
+		return token.INTERFACE
+	case token.Keywords[token.DEFER]:
+		return token.DEFER
+	case token.Keywords[token.PACKAGE]:
+		return token.PACKAGE
+	case token.Keywords[token.IMPORT]:
+		return token.IMPORT
 	case token.Keywords[token.FUNCTION]:
 		return token.FUNCTION
 	case token.Keywords[token.LET]:
@@ -221,4 +256,11 @@ func (l *Lexer) evaluateKeyword(literal string) token.Type {
 	default:
 		return token.IDENTIFIER
 	}
+}
+
+func (l *Lexer) SaveState() {
+	l.savedScanner = l.scanner
+}
+func (l *Lexer) RestoreState() {
+	l.scanner = l.savedScanner
 }

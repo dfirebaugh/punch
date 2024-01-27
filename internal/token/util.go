@@ -26,7 +26,15 @@ func (t Token) IsOperator() bool {
 }
 
 func (t Token) IsNumber() bool {
-	return t.Type == INT || t.Type == FLOAT
+	_, err := strconv.Atoi(t.Literal)
+	if err != nil {
+		println(err.Error())
+		_, err := strconv.ParseFloat(t.Literal, 64)
+		if err == nil {
+			return true
+		}
+	}
+	return err == nil
 }
 
 func (t Token) IsString() bool {
@@ -34,7 +42,7 @@ func (t Token) IsString() bool {
 }
 
 func (t Token) IsIdentifier() bool {
-	if t.IsString() || t.IsInt() || t.IsFloatInt() {
+	if t.IsString() || t.IsInt() || t.IsFloatInt() || t.IsKeyword() {
 		return false
 	}
 	if len(t.Literal) == 1 && unicode.IsLetter([]rune(t.Literal)[0]) {

@@ -143,3 +143,18 @@ func (hl *HashLiteral) String() string {
 	out.WriteString("}")
 	return out.String()
 }
+
+type NumberType struct {
+	Token token.Token
+	Type  token.Type
+}
+
+func (nt *NumberType) expressionNode() {}
+
+func (nt *NumberType) TokenLiteral() string {
+	return nt.Token.Literal
+}
+
+func (nt *NumberType) String() string {
+	return nt.Token.Literal
+}

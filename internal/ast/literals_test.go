@@ -9,7 +9,7 @@ import (
 )
 
 func TestIntegerLiteral(t *testing.T) {
-	il := &IntegerLiteral{Token: token.Token{Type: token.INT, Literal: "123"}, Value: 123}
+	il := &IntegerLiteral{Token: token.Token{Type: token.I32, Literal: "123"}, Value: 123}
 	assert.Equal(t, "123", il.String())
 	assert.Equal(t, "123", il.TokenLiteral())
 }
@@ -28,9 +28,9 @@ func TestBooleanLiteral(t *testing.T) {
 
 func TestArrayLiteral(t *testing.T) {
 	elts := []Expression{
-		&IntegerLiteral{Token: token.Token{Type: token.INT, Literal: "1"}, Value: 1},
-		&IntegerLiteral{Token: token.Token{Type: token.INT, Literal: "2"}, Value: 2},
-		&IntegerLiteral{Token: token.Token{Type: token.INT, Literal: "3"}, Value: 3},
+		&IntegerLiteral{Token: token.Token{Type: token.I32, Literal: "1"}, Value: 1},
+		&IntegerLiteral{Token: token.Token{Type: token.I32, Literal: "2"}, Value: 2},
+		&IntegerLiteral{Token: token.Token{Type: token.I32, Literal: "3"}, Value: 3},
 	}
 	al := &ArrayLiteral{Elements: elts}
 	assert.Equal(t, "[1, 2, 3]", al.String())

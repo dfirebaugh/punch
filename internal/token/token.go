@@ -22,9 +22,9 @@ const (
 	EOF     = "EOF"
 
 	// Literals
-	FLOAT  = "FLOAT"
-	INT    = "INT"
-	STRING = "STRING"
+	STRING = "string"
+	NUMBER = "number"
+	BOOL   = "bool"
 
 	// Operators
 	ASSIGN          = "="
@@ -65,12 +65,20 @@ const (
 	RBRACKET = "]"
 
 	// Keywords
-	FUNCTION = "FUNCTION"
-	LET      = "LET"
-	RETURN   = "RETURN"
-	IF       = "if"
-	ELSE     = "else"
-	PUB      = "pub"
+	FUNCTION  = "FUNCTION"
+	CONST     = "CONST"
+	LET       = "LET"
+	RETURN    = "RETURN"
+	IF        = "if"
+	ELSE      = "else"
+	PUB       = "pub"
+	PACKAGE   = "pkg"
+	IMPORT    = "import"
+	INTERFACE = "interface"
+	STRUCT    = "struct"
+	TEST      = "test"
+	ENUM      = "enum"
+	DEFER     = "defer"
 
 	IDENTIFIER = "IDENTIFIER"
 
@@ -80,12 +88,34 @@ const (
 	BANG = "!"
 )
 
+const (
+	U8  = "u8"
+	U16 = "u16"
+	U32 = "u32"
+	U64 = "u64"
+	I8  = "i8"
+	I16 = "i16"
+	I32 = "i32"
+	I64 = "i64"
+	F8  = "f8"
+	F16 = "f16"
+	F32 = "f32"
+	F64 = "f64"
+)
+
 var Keywords = map[Type]string{
-	RETURN:   "return",
-	FUNCTION: "function",
-	LET:      "let",
-	IF:       "if",
-	TRUE:     "true",
-	FALSE:    "false",
-	PUB:      "pub",
+	PACKAGE:   "pkg",
+	IMPORT:    "import",
+	INTERFACE: "interface",
+	STRUCT:    "struct",
+	TEST:      "test",
+	ENUM:      "enum",
+	RETURN:    "return",
+	CONST:     "const",
+	LET:       "let",
+	IF:        "if",
+	ELSE:      "else",
+	TRUE:      "true",
+	FALSE:     "false",
+	PUB:       "pub",
 }

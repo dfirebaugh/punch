@@ -8,8 +8,32 @@ import (
 	"github.com/dfirebaugh/punch/internal/token"
 )
 
+const (
+	MemoryAllocateFunc   = "memory_allocate"
+	MemoryDeallocateFunc = "memory_deallocate"
+)
+
+// Global or accessible map for function declarations
+var functionDeclarations map[string]*ast.FunctionDeclaration
+
+func findFunctionDeclarations(node ast.Node) {
+	switch n := node.(type) {
+	case *ast.FunctionDeclaration:
+		functionDeclarations[n.Name.Value] = n
+	case *ast.BlockStatement:
+		for _, stmt := range n.Statements {
+			findFunctionDeclarations(stmt)
+		}
+	case *ast.Program:
+		for _, stmt := range n.Statements {
+			findFunctionDeclarations(stmt)
+		}
+	}
+}
+
 // GenerateWAT generates WAT IR code for a given AST.
 func GenerateWAT(node ast.Node) string {
+	findFunctionDeclarations(node)
 	switch n := node.(type) {
 	case *ast.Program:
 		return generateStatements(n.Statements)
@@ -17,14 +41,125 @@ func GenerateWAT(node ast.Node) string {
 	return ""
 }
 
+func generateMemoryManagementFunctions() string {
+	return `
+;; Declare a memory section with 1 page (64KB)
+(memory 1)
+
+;; Global variable to track the current memory allocation position
+(global $mem_alloc_ptr (mut i32) (i32.const 0))
+
+(func $memory_allocate (param $size i32) (result i32)
+	(local $ptr i32)
+	;; Call the function to find a free block
+	(local.set $ptr (call $find_free_block (local.get $size)))
+	;; Return the pointer
+	(local.get $ptr)
+)
+(func $memory_deallocate (param $ptr i32)
+    ;; Call the function to mark the block as free
+    (call $mark_block_free (local.get $ptr))
+)
+
+;; Function to find a free memory block
+(func $find_free_block (param $size i32) (result i32)
+  (local $ptr i32)
+
+  ;; Get the current allocation pointer
+  (local.set $ptr (global.get $mem_alloc_ptr))
+
+  ;; Update the allocation pointer (naive implementation, no checks for memory limits)
+  (global.set $mem_alloc_ptr (i32.add (global.get $mem_alloc_ptr) (local.get $size)))
+
+  ;; Return the starting address of the allocated block
+  (local.get $ptr)
+)
+
+(data (i32.const 0) "\00\00\00\00") ;; Memory allocation bitmap, initialized to all free
+
+;; mark_block_free -- may need to be revisited
+(func $mark_block_free
+  (param $ptr i32)  ;; Pointer to the memory block to free
+)
+`
+}
+
 func generateStatements(stmts []ast.Statement) string {
 	var out strings.Builder
 	out.WriteString("(module\n")
+
+	out.WriteString(generateMemoryManagementFunctions())
+
 	for _, stmt := range stmts {
 		out.WriteString(generateStatement(stmt))
 	}
 	out.WriteString(")\n")
 	return out.String()
+}
+
+func generateStringLiteral(str *ast.StringLiteral) string {
+	length := len(str.Value) + 1 // Including null terminator
+	return fmt.Sprintf(
+		`(call $%s (i32.const %d)) ;; allocate memory for string\n`+
+			`(data (i32.const 0) "%s\u0000") ;; store string with null terminator\n`,
+		MemoryAllocateFunc, length, str.Value)
+}
+
+func generateFunctionCall(call *ast.FunctionCall) string {
+	var out strings.Builder
+	for _, arg := range call.Arguments {
+		out.WriteString(generateExpression(arg) + "\n")
+	}
+	out.WriteString(fmt.Sprintf("(call $%s)\n", call.FunctionName))
+
+	if funcDecl, exists := functionDeclarations[call.FunctionName]; exists {
+		if funcDecl.ReturnType.Type == token.STRING {
+			out.WriteString(fmt.Sprintf("(call $%s (local.get 0)) ;; deallocate string memory\n", MemoryDeallocateFunc))
+		}
+	}
+
+	return out.String()
+}
+
+func generateInfixExpression(infix *ast.InfixExpression) string {
+	left := generateExpression(infix.Left)
+	right := generateExpression(infix.Right)
+	operator := infix.Operator.Type
+
+	switch operator {
+	case token.PLUS:
+		return fmt.Sprintf("(i32.add %s %s)", left, right)
+	case token.MINUS:
+		return fmt.Sprintf("(i32.sub %s %s)", left, right)
+	case token.ASTERISK:
+		return fmt.Sprintf("(i32.mul %s %s)", left, right)
+	case token.SLASH:
+		return fmt.Sprintf("(i32.div_s %s %s)", left, right)
+	case token.LT:
+		return fmt.Sprintf("(i32.lt_s %s %s)", left, right)
+	case token.GT:
+		return fmt.Sprintf("(i32.gt_s %s %s)", left, right)
+	case token.EQ:
+		return fmt.Sprintf("(i32.eq %s %s)", left, right)
+	case token.NOT_EQ:
+		return fmt.Sprintf("(i32.ne %s %s)", left, right)
+	default:
+		println("\t\t operator:", operator)
+		return fmt.Sprintf(";; unhandled operator: %s\n", operator)
+	}
+}
+
+func generatePrefixExpression(prefix *ast.PrefixExpression) string {
+	operand := generateExpression(prefix.Right)
+	operator := prefix.Operator.Type
+	switch operator {
+	case token.BANG:
+		return fmt.Sprintf("(i32.eqz %s)", operand)
+	case token.MINUS:
+		return fmt.Sprintf("(i32.sub (i32.const 0) %s)", operand)
+	default:
+		return fmt.Sprintf(";; unhandled operator: %s\n", operator)
+	}
 }
 
 func generateStatement(stmt ast.Statement) string {
@@ -84,7 +219,7 @@ func generateStatement(stmt ast.Statement) string {
 		if s.Parameters != nil {
 			for _, param := range s.Parameters {
 				if param != nil {
-					out.WriteString(fmt.Sprintf("(param $%s i32)\n", param.Value))
+					out.WriteString(fmt.Sprintf("(param $%s i32)\n", param.Identifier.Value))
 				} else {
 					out.WriteString("(param)\n")
 				}
@@ -112,35 +247,11 @@ func generateExpression(expr ast.Expression) string {
 			return "(i32.const 0)"
 		}
 	case *ast.StringLiteral:
-		return "(i32.const 0)" // return pointer to string constant
+		return generateStringLiteral(e)
 	case *ast.PrefixExpression:
-		operand := generateExpression(e.Right)
-		switch e.Operator {
-		case token.BANG:
-			return fmt.Sprintf("(i32.eqz %s)", operand)
-		case token.MINUS:
-			return fmt.Sprintf("(i32.sub (i32.const 0) %s)", operand)
-		}
+		return generatePrefixExpression(e)
 	case *ast.InfixExpression:
-		left, right := generateExpression(e.Left), generateExpression(e.Right)
-		switch e.Operator.Type {
-		case token.PLUS:
-			return fmt.Sprintf("(i32.add %s %s)", left, right)
-		case token.MINUS:
-			return fmt.Sprintf("(i32.sub %s %s)", left, right)
-		case token.ASTERISK:
-			return fmt.Sprintf("(i32.mul %s %s)", left, right)
-		case token.SLASH:
-			return fmt.Sprintf("(i32.div_s %s %s)", left, right)
-		case token.LT:
-			return fmt.Sprintf("(i32.lt_s %s %s)", left, right)
-		case token.GT:
-			return fmt.Sprintf("(i32.gt_s %s %s)", left, right)
-		case token.EQ:
-			return fmt.Sprintf("(i32.eq %s %s)", left, right)
-		case token.NOT_EQ:
-			return fmt.Sprintf("(i32.ne %s %s)", left, right)
-		}
+		return generateInfixExpression(e)
 	case *ast.Identifier:
 		return fmt.Sprintf("(local.get $%s)", e.Value)
 	case *ast.IfExpression:
@@ -156,12 +267,7 @@ func generateExpression(expr ast.Expression) string {
 		out.WriteString(")\n")
 		return out.String()
 	case *ast.FunctionCall:
-		var out strings.Builder
-		for _, arg := range e.Arguments {
-			out.WriteString(fmt.Sprintf("%s\n", generateExpression(arg)))
-		}
-		out.WriteString(fmt.Sprintf("(call $%s)\n", e.FunctionName))
-		return out.String()
+		return generateFunctionCall(e)
 	case *ast.ArrayLiteral:
 		var out strings.Builder
 		out.WriteString(fmt.Sprintf("(i32.const %d)\n", len(e.Elements)))

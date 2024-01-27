@@ -18,7 +18,7 @@ func TestLexer(t *testing.T) {
 				{Type: token.LET, Literal: "let"},
 				{Type: token.IDENTIFIER, Literal: "xx"},
 				{Type: token.ASSIGN, Literal: "="},
-				{Type: token.INT, Literal: "10"},
+				{Type: token.NUMBER, Literal: "10"},
 				{Type: token.SEMICOLON, Literal: ";"},
 				{Type: token.EOF, Literal: ""},
 			},

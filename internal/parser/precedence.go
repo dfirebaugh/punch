@@ -2,8 +2,6 @@ package parser
 
 import "github.com/dfirebaugh/punch/internal/token"
 
-type precedence int
-
 // precedence order
 const (
 	_ int = iota

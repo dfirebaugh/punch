@@ -42,7 +42,7 @@ func TestTokenIsString(t *testing.T) {
 
 func TestTokenIsIdentifier(t *testing.T) {
 	identTok := Token{Type: IDENTIFIER, Literal: "myVar"}
-	numTok := Token{Type: INT, Literal: "1234"}
+	numTok := Token{Type: I32, Literal: "1234"}
 	strTok := Token{Type: STRING, Literal: "\"hello\""}
 	symTok := Token{Type: PLUS, Literal: "+"}
 	if !identTok.IsIdentifier() {
@@ -60,8 +60,8 @@ func TestTokenIsIdentifier(t *testing.T) {
 }
 
 func TestTokenIsFloatInt(t *testing.T) {
-	floatTok := Token{Type: FLOAT, Literal: "3.14"}
-	intTok := Token{Type: INT, Literal: "42"}
+	floatTok := Token{Type: F32, Literal: "3.14"}
+	intTok := Token{Type: I32, Literal: "42"}
 	notNumTok := Token{Type: IDENTIFIER, Literal: "myVar"}
 	if !floatTok.IsFloatInt() {
 		t.Errorf("Token.IsFloatInt(): expected true for floating point number token, got false")
@@ -75,8 +75,8 @@ func TestTokenIsFloatInt(t *testing.T) {
 }
 
 func TestTokenIsInt(t *testing.T) {
-	intTok := Token{Type: INT, Literal: "42"}
-	floatTok := Token{Type: FLOAT, Literal: "3.14"}
+	intTok := Token{Type: I32, Literal: "42"}
+	floatTok := Token{Type: F32, Literal: "3.14"}
 	notNumTok := Token{Type: IDENTIFIER, Literal: "myVar"}
 	if !intTok.IsInt() {
 		t.Errorf("Token.IsInt(): expected true for integer token, got false")
@@ -112,7 +112,7 @@ func TestTokenIsIdentRune(t *testing.T) {
 func TestTokenIsSingleCharIdentifier(t *testing.T) {
 	singleCharIdent := Token{Type: IDENTIFIER, Literal: "x"}
 	multipleCharIdent := Token{Type: IDENTIFIER, Literal: "var"}
-	numTok := Token{Type: INT, Literal: "1234"}
+	numTok := Token{Type: I32, Literal: "1234"}
 	if !singleCharIdent.IsSingleCharIdentifier() {
 		t.Errorf("Token.IsSingleCharIdentifier(): expected true for single character identifier token, got false")
 	}
@@ -158,7 +158,7 @@ func TestMatch(t *testing.T) {
 		Position: scanner.Position{Line: 1, Column: 2, Offset: 3},
 	}
 	tok6 := Token{
-		Type:     INT,
+		Type:     I32,
 		Literal:  "1234",
 		Position: scanner.Position{Line: 1, Column: 2, Offset: 3},
 	}
@@ -195,8 +195,6 @@ func TestIsOperator(t *testing.T) {
 		{Token{Type: LT}, true},
 		{Token{Type: GT}, true},
 		{Token{Type: ASSIGN}, true},
-		{Token{Type: INT, Literal: "42"}, false},
-		{Token{Type: FLOAT, Literal: "3.14"}, false},
 		{Token{Type: IDENTIFIER, Literal: "foo"}, false},
 	}
 
@@ -213,8 +211,15 @@ func TestIsNumber(t *testing.T) {
 		token Token
 		want  bool
 	}{
-		{Token{Type: INT, Literal: "42"}, true},
-		{Token{Type: FLOAT, Literal: "3.14"}, true},
+		{Token{Type: U8, Literal: "255"}, true},
+		{Token{Type: U16, Literal: "65535"}, true},
+		{Token{Type: U32, Literal: "4294967295"}, true},
+		{Token{Type: I8, Literal: "127"}, true},
+		{Token{Type: I16, Literal: "32767"}, true},
+		{Token{Type: I32, Literal: "2147483647"}, true},
+		{Token{Type: F8, Literal: "1.23"}, true},
+		{Token{Type: F16, Literal: "1.23"}, true},
+		{Token{Type: F32, Literal: "1.23"}, true},
 		{Token{Type: PLUS}, false},
 		{Token{Type: MINUS}, false},
 		{Token{Type: IDENTIFIER, Literal: "foo"}, false},

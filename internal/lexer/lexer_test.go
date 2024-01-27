@@ -52,10 +52,6 @@ func TestEvaluateToken(t *testing.T) {
 			ExpectedLiteral: "}",
 		},
 		{
-			ExpectedType:    token.FUNCTION,
-			ExpectedLiteral: "function",
-		},
-		{
 			ExpectedType:    token.LET,
 			ExpectedLiteral: "let",
 		},
@@ -68,15 +64,15 @@ func TestEvaluateToken(t *testing.T) {
 			ExpectedLiteral: `"some string - could be any kind of string of any length"`,
 		},
 		{
-			ExpectedType:    token.INT,
+			ExpectedType:    token.NUMBER,
 			ExpectedLiteral: `42`,
 		},
 		{
-			ExpectedType:    token.INT,
+			ExpectedType:    token.NUMBER,
 			ExpectedLiteral: `1`,
 		},
 		{
-			ExpectedType:    token.FLOAT,
+			ExpectedType:    token.NUMBER,
 			ExpectedLiteral: `42.2`,
 		},
 	}
@@ -95,7 +91,7 @@ func TestLexLetStatement(t *testing.T) {
 		{Type: token.LET, Literal: "let", Position: scanner.Position{Line: 1, Column: 1, Offset: 0}},
 		{Type: token.IDENTIFIER, Literal: "x", Position: scanner.Position{Line: 1, Column: 5, Offset: 4}},
 		{Type: token.ASSIGN, Literal: "=", Position: scanner.Position{Line: 1, Column: 7, Offset: 6}},
-		{Type: token.INT, Literal: "5", Position: scanner.Position{Line: 1, Column: 9, Offset: 8}},
+		{Type: token.NUMBER, Literal: "5", Position: scanner.Position{Line: 1, Column: 9, Offset: 8}},
 		{Type: token.SEMICOLON, Literal: ";", Position: scanner.Position{Line: 1, Column: 10, Offset: 9}},
 	}
 
@@ -111,21 +107,27 @@ func TestLexLetStatement(t *testing.T) {
 	}
 }
 func Test_evaluateType(t *testing.T) {
-	input := `= 42 3.14 "hello world" foo if`
+	input := `= 42 3.14 "hello world" foo`
 	l := New(input)
+
 	expectedTokens := []token.Type{
 		token.ASSIGN,
-		token.INT,
-		token.FLOAT,
+		token.NUMBER,
+		token.NUMBER,
 		token.STRING,
 		token.IDENTIFIER,
-		token.IF,
 	}
+
 	for i, expectedTokenType := range expectedTokens {
 		t.Run(string(expectedTokenType), func(t *testing.T) {
-			token := l.evaluateType(l.NextToken())
-			if token != expectedTokenType {
-				t.Errorf("test %d: expected %+v but got %+v", i+1, expectedTokenType, token)
+			tok := l.NextToken()
+			if tok.Type == token.ILLEGAL {
+				t.Fatalf("Illegal token at index %d, literal: %s", i, tok.Literal)
+			}
+
+			tokenType := l.evaluateType(tok)
+			if tokenType != expectedTokenType {
+				t.Errorf("test %d: expected %+v but got %+v, literal: %s", i+1, expectedTokenType, tokenType, tok.Literal)
 			}
 		})
 	}
@@ -195,7 +197,6 @@ func TestEvaluateKeyword(t *testing.T) {
 		input    string
 		expected token.Type
 	}{
-		{"function", token.FUNCTION},
 		{"let", token.LET},
 		{"return", token.RETURN},
 		{"if", token.IF},
@@ -208,6 +209,38 @@ func TestEvaluateKeyword(t *testing.T) {
 		actual := l.evaluateKeyword(tt.input)
 		if actual != tt.expected {
 			t.Errorf("For input '%s', expected %v but got %v", tt.input, tt.expected, actual)
+		}
+	}
+}
+
+func TestLexFunctionDeclaration(t *testing.T) {
+	input := "i8 add(x i8, y i8) { return x + y; }"
+	expectedTokens := []token.Token{
+		{Type: token.I8, Literal: "i8"},
+		{Type: token.IDENTIFIER, Literal: "add"},
+		{Type: token.LPAREN, Literal: "("},
+		{Type: token.IDENTIFIER, Literal: "x"},
+		{Type: token.I8, Literal: "i8"},
+		{Type: token.COMMA, Literal: ","},
+		{Type: token.IDENTIFIER, Literal: "y"},
+		{Type: token.I8, Literal: "i8"},
+		{Type: token.RPAREN, Literal: ")"},
+		{Type: token.LBRACE, Literal: "{"},
+		{Type: token.RETURN, Literal: "return"},
+		{Type: token.IDENTIFIER, Literal: "x"},
+		{Type: token.PLUS, Literal: "+"},
+		{Type: token.IDENTIFIER, Literal: "y"},
+		{Type: token.SEMICOLON, Literal: ";"},
+		{Type: token.RBRACE, Literal: "}"},
+	}
+
+	l := New(input)
+
+	for i, expected := range expectedTokens {
+		tok := l.NextToken()
+		if tok.Type != expected.Type || tok.Literal != expected.Literal {
+			t.Errorf("TestLexFunctionDeclaration - Token[%d] wrong. expected=%s, got=%s (literal: %s)",
+				i, expected.Type, tok.Type, tok.Literal)
 		}
 	}
 }

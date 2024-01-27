@@ -38,16 +38,14 @@ func (ls *LetStatement) TokenLiteral() string { return string(ls.Token.Literal) 
 func (ls *LetStatement) String() string {
 	var out bytes.Buffer
 	out.WriteString(ls.Token.Literal + " ")
-
 	if ls.Name != nil {
-		out.WriteString(ls.Name.TokenLiteral() + " " + token.ASSIGN + " ")
+		out.WriteString(ls.Name.String() + " ")
 	}
-
+	out.WriteString("= ")
 	if ls.Value != nil {
 		out.WriteString(ls.Value.String())
 	}
-
-	out.WriteString(token.SEMICOLON)
+	out.WriteString(";")
 	return out.String()
 }
 
@@ -88,17 +86,18 @@ func (bs *BlockStatement) String() string {
 	var out bytes.Buffer
 	out.WriteString("{ ")
 	for _, s := range bs.Statements {
-		out.WriteString(s.String())
+		out.WriteString(s.String() + " ")
 	}
-	out.WriteString(" }")
+	out.WriteString("}")
 	return out.String()
 }
 
 type FunctionStatement struct {
 	IsExported bool
 	Name       *Identifier
-	Parameters []*Identifier
+	Parameters []*Parameter
 	Body       *BlockStatement
+	ReturnType Expression
 }
 
 func (f *FunctionStatement) expressionNode() {}
@@ -136,5 +135,54 @@ func (f *FunctionStatement) String() string {
 	if f.Body != nil {
 		out.WriteString(f.Body.String())
 	}
+	return out.String()
+}
+
+type DeferStatement struct {
+	Token     token.Token
+	Statement Statement
+}
+
+func (ds *DeferStatement) statementNode() {}
+
+func (ds *DeferStatement) TokenLiteral() string {
+	return ds.Token.Literal
+}
+
+func (ds *DeferStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(ds.TokenLiteral() + " ")
+	if ds.Statement != nil {
+		out.WriteString(ds.Statement.String())
+	}
+	return out.String()
+}
+
+type VariableDeclaration struct {
+	Type  token.Token
+	Name  *Identifier
+	Value Expression
+}
+
+func (vd *VariableDeclaration) statementNode() {}
+
+func (vd *VariableDeclaration) TokenLiteral() string {
+	return vd.Type.Literal
+}
+
+func (vd *VariableDeclaration) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(vd.Type.Literal + " ")
+	if vd.Name != nil {
+		out.WriteString(vd.Name.String() + " ")
+	}
+
+	out.WriteString("= ")
+	if vd.Value != nil {
+		out.WriteString(vd.Value.String())
+	}
+
+	out.WriteString(";")
 	return out.String()
 }

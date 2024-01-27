@@ -1,4 +1,4 @@
-pub fn addTwo(x, y) {
+pub i8 addTwo(x i8, y i8) {
 	return (x + y);
 }
 
@@ -8,6 +8,6 @@ fn addThree(x, y, z) {
 }
 */
 
-pub fn addFour(a, b, c, d) {
+pub i8 addFour(a i8, b i8, c i8, d i8) {
 	return (a + b + c + d);
 }

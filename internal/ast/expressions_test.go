@@ -15,9 +15,9 @@ func TestIdentifier(t *testing.T) {
 }
 
 func TestBinaryExpression(t *testing.T) {
-	left := &IntegerLiteral{Token: token.Token{Type: token.INT, Literal: "5"}, Value: 5}
+	left := &IntegerLiteral{Token: token.Token{Type: token.I32, Literal: "5"}, Value: 5}
 	op := token.Token{Type: token.PLUS, Literal: "+"}
-	right := &IntegerLiteral{Token: token.Token{Type: token.INT, Literal: "10"}, Value: 10}
+	right := &IntegerLiteral{Token: token.Token{Type: token.I32, Literal: "10"}, Value: 10}
 	be := &BinaryExpression{Left: left, Operator: op, Right: right}
 	assert.Equal(t, "(5 + 10)", be.String())
 	assert.Equal(t, "+", be.TokenLiteral())

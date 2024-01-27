@@ -9,7 +9,7 @@ import (
 )
 
 func TestLetStatement(t *testing.T) {
-	input := "let x = 5;"
+	input := "i8 x = 5;"
 	p, program := parse(input, t)
 	checkParserErrors(t, p)
 
@@ -18,13 +18,13 @@ func TestLetStatement(t *testing.T) {
 	}
 
 	stmt := program.Statements[0]
-	if stmt.TokenLiteral() != "let" {
-		t.Fatalf("stmt.TokenLiteral not 'let'. got=%q", stmt.TokenLiteral())
+	if stmt.TokenLiteral() != "i8" {
+		t.Fatalf("stmt.TokenLiteral not 'i8'. got=%q", stmt.TokenLiteral())
 	}
 
-	letStmt, ok := stmt.(*ast.LetStatement)
+	letStmt, ok := stmt.(*ast.VariableDeclaration)
 	if !ok {
-		t.Fatalf("stmt not *ast.LetStatement. got=%T", stmt)
+		t.Fatalf("stmt not *ast.VariableDeclaration. got=%T", stmt)
 	}
 
 	if letStmt.Name.Value != "x" {
@@ -61,7 +61,7 @@ func TestReturnStatement(t *testing.T) {
 }
 
 func TestFunctionStatement(t *testing.T) {
-	input := "function add(x, y) { return x + y; }"
+	input := "i8 add(x i8, y i8) { return x + y; }"
 	p, program := parse(input, t)
 	checkParserErrors(t, p)
 
@@ -70,13 +70,13 @@ func TestFunctionStatement(t *testing.T) {
 	}
 
 	stmt := program.Statements[0]
-	if stmt.TokenLiteral() != "function" {
-		t.Fatalf("stmt.TokenLiteral not 'function'. got=%q", stmt.TokenLiteral())
+	if stmt.TokenLiteral() != "i8" {
+		t.Fatalf("stmt.TokenLiteral not 'i8'. got=%q", stmt.TokenLiteral())
 	}
 
-	funcStmt, ok := stmt.(*ast.FunctionStatement)
+	funcStmt, ok := stmt.(*ast.FunctionDeclaration)
 	if !ok {
-		t.Fatalf("stmt not *ast.FunctionStatement. got=%T", stmt)
+		t.Fatalf("stmt not *ast.FunctionDeclaration. got=%T", stmt)
 	}
 
 	if funcStmt.Name.Value != "add" {
@@ -87,12 +87,12 @@ func TestFunctionStatement(t *testing.T) {
 		t.Fatalf("len(funcStmt.Parameters) not 2. got=%d", len(funcStmt.Parameters))
 	}
 
-	if funcStmt.Parameters[0].Value != "x" {
-		t.Fatalf("funcStmt.Parameters[0].Value not 'x'. got=%s", funcStmt.Parameters[0].Value)
+	if funcStmt.Parameters[0].Identifier.Value != "x" {
+		t.Fatalf("funcStmt.Parameters[0].Value not 'x'. got=%s", funcStmt.Parameters[0].Identifier.Value)
 	}
 
-	if funcStmt.Parameters[1].Value != "y" {
-		t.Fatalf("funcStmt.Parameters[1].Value not 'y'. got=%s", funcStmt.Parameters[1].Value)
+	if funcStmt.Parameters[1].Identifier.Value != "y" {
+		t.Fatalf("funcStmt.Parameters[1].Value not 'y'. got=%s", funcStmt.Parameters[1].Identifier.Value)
 	}
 
 	if funcStmt.Body.String() != "{ return (x + y); }" {

@@ -68,41 +68,26 @@ func TestParseBoolean(t *testing.T) {
 	}
 }
 
-func TestParseLetStatement(t *testing.T) {
-	input := "let x = 5;"
+func TestParseAssignment(t *testing.T) {
+	input := "i8 x = 5;"
 	lexer := lexer.New(input)
 	parser := New(lexer)
 
 	program := parser.ParseProgram()
 	checkParserErrors(t, parser)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
+	expectedStatements := []string{
+		"i8 x = 5;",
 	}
 
-	stmt, ok := program.Statements[0].(*ast.LetStatement)
-	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.LetStatement. got=%T", program.Statements[0])
+	if len(expectedStatements) != len(program.Statements) {
+		t.Errorf("program has wrong number of statements. got=%d expected=%d", len(program.Statements), len(expectedStatements))
 	}
 
-	if stmt.TokenLiteral() != "let" {
-		t.Errorf("stmt.TokenLiteral not 'let'. got=%q", stmt.TokenLiteral())
-	}
-
-	if stmt.Name.Value != "x" {
-		t.Errorf("stmt.Name.Value not 'x'. got=%q", stmt.Name.Value)
-	}
-
-	if stmt.Name.TokenLiteral() != "x" {
-		t.Errorf("stmt.Name.TokenLiteral() not 'x'. got=%q", stmt.Name.TokenLiteral())
-	}
-
-	if _, ok := stmt.Value.(*ast.IntegerLiteral); !ok {
-		t.Errorf("stmt.Value not *ast.IntegerLiteral. got=%T", stmt.Value)
-	}
-
-	if stmt.Value.TokenLiteral() != "5" {
-		t.Errorf("stmt.Value.TokenLiteral() not '5'. got=%q", stmt.Value.TokenLiteral())
+	for i, s := range program.Statements {
+		if s.String() != expectedStatements[i] {
+			t.Errorf("expected %q, got %q", expectedStatements[i], s.String())
+		}
 	}
 }
 
@@ -158,7 +143,7 @@ func TestParsePrefixExpression(t *testing.T) {
 		t.Fatalf("stmt is not ast.PrefixExpression. got=%T", stmt.Expression)
 	}
 
-	if exp.Operator != "!" {
+	if exp.Operator.Literal != "!" {
 		t.Errorf("exp.Operator is not '!'. got=%q", exp.Operator)
 	}
 
@@ -224,7 +209,7 @@ func TestParseInfixExpression(t *testing.T) {
 }
 
 func TestParseGroupedExpression(t *testing.T) {
-	input := "(5 + 6);"
+	input := "(5 + 6)"
 	lexer := lexer.New(input)
 	parser := New(lexer)
 
@@ -259,7 +244,7 @@ func TestParseGroupedExpression(t *testing.T) {
 }
 
 func TestParseIfExpression(t *testing.T) {
-	input := "if (x < y) { x };"
+	input := "if (x < y) { x }"
 	lexer := lexer.New(input)
 	parser := New(lexer)
 
@@ -289,60 +274,17 @@ func TestParseIfExpression(t *testing.T) {
 		return
 	}
 
-	cons, ok := exp.Consequence.Statements[0].(*ast.ExpressionStatement)
+	cons, ok := exp.Consequence.Statements[0].(*ast.BlockStatement)
 	if !ok {
 		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T", exp.Consequence.Statements[0])
 	}
 
-	if !testIdentifier(t, cons.Expression, "x") {
-		return
+	if cons.Statements[0].(*ast.ExpressionStatement).Expression.(*ast.Identifier).Token.Literal != "x" {
+		t.Fatalf("cons.Statements[0] is not ast.ExpressionStatement. got=%T", cons.Statements[0])
 	}
 
 	if exp.Alternative != nil {
 		t.Errorf("exp.Alternative was not nil. got=%+v", exp.Alternative)
-	}
-}
-
-func TestParseBlockStatement(t *testing.T) {
-	input := `{
-		let x = 5;
-		let y = 10;
-		let result = x + y;
-	}`
-
-	lexer := lexer.New(input)
-	parser := New(lexer)
-
-	program := parser.ParseProgram()
-	if len(parser.Errors()) != 0 {
-		for _, err := range parser.Errors() {
-			t.Errorf("parser error: %s", err)
-		}
-		t.Fatalf("parser has %d errors", len(parser.Errors()))
-	}
-
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
-	}
-
-	stmt, ok := program.Statements[0].(*ast.BlockStatement)
-	if !ok {
-		t.Fatalf("expected *ast.BlockStatement. got=%T", program.Statements[0])
-	}
-
-	if len(stmt.Statements) != 3 {
-		t.Fatalf("expected 3 statements in block statement. got=%d", len(stmt.Statements))
-	}
-
-	expectedTokens := []token.Token{
-		{Type: token.LET, Literal: "let"},
-		{Type: token.LET, Literal: "let"},
-		{Type: token.LET, Literal: "let"},
-	}
-	for i, s := range stmt.Statements {
-		if s.TokenLiteral() != string(expectedTokens[i].Literal) {
-			t.Errorf("expected token literal=%q, got=%q", expectedTokens[i], s.TokenLiteral())
-		}
 	}
 }
 
@@ -361,7 +303,7 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 }
 
 func TestParseFunctionStatement(t *testing.T) {
-	input := "function add(x, y) { return x + y; }"
+	input := "i8 add(x i8, y i8) { return x + y; }"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -383,8 +325,8 @@ func TestParseFunctionStatement(t *testing.T) {
 	expectedParams := []string{"x", "y"}
 
 	for i, ident := range stmt.Parameters {
-		if ident.Value != expectedParams[i] {
-			t.Errorf("Parameter %d should have value %q, got %q", i+1, expectedParams[i], ident.Value)
+		if ident.Identifier.Value != expectedParams[i] {
+			t.Errorf("Parameter %d should have value %q, got %q", i+1, expectedParams[i], ident.Identifier.Value)
 		}
 	}
 
@@ -402,46 +344,213 @@ func TestParseFunctionStatement(t *testing.T) {
 	}
 }
 
-func TestParseFunctionParameters(t *testing.T) {
-	input := "(foo, bar, baz)"
+func TestParseFunctionParametersLexing(t *testing.T) {
+	input := "pub i8 addTwo(x i8, y string) {return x + y;}"
+	l := lexer.New(input)
+	p := New(l)
+
+	expectedTokens := []token.Token{
+		{Type: token.PUB, Literal: "pub"},
+		{Type: token.I8, Literal: "i8"},
+		{Type: token.IDENTIFIER, Literal: "addTwo"},
+		{Type: token.LPAREN, Literal: "("},
+		{Type: token.IDENTIFIER, Literal: "x"},
+		{Type: token.I8, Literal: "i8"},
+		{Type: token.COMMA, Literal: ","},
+		{Type: token.IDENTIFIER, Literal: "y"},
+		{Type: token.STRING, Literal: "string"},
+		{Type: token.RPAREN, Literal: ")"},
+		{Type: token.LBRACE, Literal: "{"},
+		{Type: token.RETURN, Literal: "return"},
+		{Type: token.IDENTIFIER, Literal: "x"},
+		{Type: token.PLUS, Literal: "+"},
+		{Type: token.IDENTIFIER, Literal: "y"},
+		{Type: token.SEMICOLON, Literal: ";"},
+		{Type: token.RBRACE, Literal: "}"},
+		{Type: token.EOF, Literal: ""},
+	}
+
+	for _, expected := range expectedTokens {
+		fmt.Printf("Token: Type=%s, Literal=%s\n", p.curToken.Type, p.curToken.Literal)
+		if p.curToken.Type != expected.Type || p.curToken.Literal != expected.Literal {
+			t.Fatalf("unexpected token - expected %q (%q), got %q (%q)", expected.Type, expected.Literal, p.curToken.Type, p.curToken.Literal)
+		}
+		p.nextToken()
+	}
+}
+
+func TestParseFunctionParameter(t *testing.T) {
+	input := "x i8"
 
 	l := lexer.New(input)
 	p := New(l)
 
-	params := p.parseFunctionParameters()
+	param := p.parseFunctionParameter()
 
-	if len(params) != 3 {
-		t.Fatalf("Expected 3 parameters, got %d", len(params))
+	if param == nil {
+		t.Fatalf("Expected a valid parameter, got nil")
 	}
 
-	expectedParams := []string{"foo", "bar", "baz"}
+	expectedName := "x"
+	expectedType := token.I8
 
-	for i, ident := range params {
-		if ident.Value != expectedParams[i] {
-			t.Errorf("Parameter %d should have value %q, got %q", i+1, expectedParams[i], ident.Value)
+	if param.Identifier.Value != expectedName {
+		t.Errorf("Expected parameter name to be %q, got %q", expectedName, param.Identifier.Value)
+	}
+
+	if string(param.Type) != expectedType {
+		t.Errorf("Expected parameter type to be %s, got %s", expectedType, param.Type)
+	}
+}
+
+func TestParseFunctionParameters(t *testing.T) {
+	input := "i8 addTwo(x i8, y string) {return x + y;}"
+	l := lexer.New(input)
+	p := New(l)
+	p.nextToken()
+	p.nextToken()
+
+	parameters := p.parseFunctionParameters()
+
+	expected := []*ast.Parameter{
+		{Identifier: &ast.Identifier{Value: "x"}, Type: token.I8},
+		{Identifier: &ast.Identifier{Value: "y"}, Type: token.STRING},
+	}
+
+	if len(parameters) != len(expected) {
+		t.Fatalf("wrong number of parameters. want=%d, got=%d\n", len(expected), len(parameters))
+	}
+
+	for i, param := range parameters {
+		if param.Identifier.Value != expected[i].Identifier.Value {
+			t.Errorf("parameter %d identifier wrong. want=%s, got=%s", i, expected[i].Identifier.Value, param.Identifier.Value)
+		}
+		if param.Type != expected[i].Type {
+			t.Errorf("parameter %d type wrong. want=%s, got=%s", i, expected[i].Type, param.Type)
 		}
 	}
 }
 
 func TestParseComment(t *testing.T) {
-	input := `function commentFn() {
-		// This is a single-line comment
-		let x = 5; // Another comment
+	input := `i8 commentFn() {
+		i8 x = 5; 
 		/*
 		This is a multi-line comment
 		that spans multiple lines.
 		*/
-		let y = 10;
+		i8 y = 10;
+		return y + x;
 	}`
-	expected := `function commentFn() { let x = 5;let y = 10; }`
+	expected := `i8 commentFn() { i8 x = 5; i8 y = 10; return (y + x); }`
 
-	p := New(lexer.New(input))
+	l := lexer.New(input)
 
-	stmt := p.parseFunctionStatement()
+	p := New(l)
+	stmt := p.parseFunctionDeclaration()
+	if stmt == nil {
+		t.Errorf("statement was nil")
+		return
+	}
+	fmt.Printf("Parsed Statement: %s\n", stmt.String())
+
 	if got := stmt.String(); got != expected {
 		t.Errorf("expected comments to be stripped out:\nwant %q\ngot  %q", expected, got)
 	}
-	println(stmt.String())
+}
+
+func TestParseTypeBasedVariableDeclaration(t *testing.T) {
+	input := `i32 myVar = 5;`
+	l := lexer.New(input)
+	p := New(l)
+
+	decl := p.parseTypeBasedVariableDeclaration()
+	if decl == nil {
+		t.Fatalf("parseTypeBasedVariableDeclaration() returned nil")
+	}
+
+	varDecl, ok := decl.(*ast.VariableDeclaration)
+	if !ok {
+		t.Fatalf("Statement is not *ast.VariableDeclaration. got=%T", decl)
+	}
+
+	if varDecl.Type.Literal != "i32" {
+		t.Errorf("varDecl.Type.Literal not 'i32'. got=%s", varDecl.Type.Literal)
+	}
+
+	if varDecl.Name.Value != "myVar" {
+		t.Errorf("varDecl.Name.Value not 'myVar'. got=%s", varDecl.Name.Value)
+	}
+
+	val, ok := varDecl.Value.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("varDecl.Value not *ast.IntegerLiteral. got=%T", varDecl.Value)
+	}
+
+	if val.Value != 5 {
+		t.Errorf("varDecl.Value.Value not 5. got=%d", val.Value)
+	}
+}
+
+func TestParseExpressionAssignment(t *testing.T) {
+	input := "i8 myVar = 5"
+	l := lexer.New(input)
+	p := New(l)
+	p.nextToken() // Initialize the parser to point to the first token.
+
+	expr := p.parseExpression(LOWEST)
+	if expr == nil {
+		t.Fatalf("parseExpression() returned nil")
+	}
+
+	assignExpr, ok := expr.(*ast.AssignmentExpression)
+	if !ok {
+		t.Fatalf("Expression is not *ast.AssignmentExpression. got=%T", expr)
+	}
+
+	if !testIdentifier(t, assignExpr.Left, "myVar") {
+		return
+	}
+
+	val, ok := assignExpr.Right.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("assignExpr.Right is not *ast.IntegerLiteral. got=%T", assignExpr.Right)
+	}
+
+	if val.Value != 5 {
+		t.Errorf("assignExpr.Right.Value is not 5. got=%d", val.Value)
+	}
+}
+
+func TestStringLiteralReturn(t *testing.T) {
+	input := `string main() {
+		return "hello, world!";
+	}`
+
+	l := lexer.New(input)
+	p := New(l)
+	p.ParseProgram()
+	for _, e := range p.Errors() {
+		t.Errorf("parser has errors: %s", e)
+	}
+}
+
+func TestStructDeclaration(t *testing.T) {
+	input := `struct message {
+		sender i32
+		recipient i8
+		body string
+	}`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+
+	for _, s := range program.Statements {
+		println(s.String())
+	}
+
+	for _, e := range p.Errors() {
+		t.Errorf("parser has errors: %s", e)
+	}
 }
 
 func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {

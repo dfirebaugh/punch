@@ -204,7 +204,7 @@ func (f *FunctionCall) String() string {
 
 type PrefixExpression struct {
 	Token    token.Token
-	Operator string
+	Operator token.Token
 	Right    Expression
 }
 
@@ -220,7 +220,7 @@ func (pe *PrefixExpression) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("(")
-	out.WriteString(pe.Operator)
+	out.WriteString(" " + pe.Operator.Literal + " ")
 	out.WriteString(pe.Right.String())
 	out.WriteString(")")
 
@@ -279,23 +279,24 @@ func (i *Integer) String() string {
 	return fmt.Sprintf("%d", i.Value)
 }
 
-// type Identifier struct {
-// 	Token token.Token // The token.IDENT token
-// 	Value string
-// }
+type AssignmentExpression struct {
+	Token token.Token
+	Left  Expression
+	Right Expression
+}
 
-// func (i *Identifier) expressionNode() {}
+func (ae *AssignmentExpression) expressionNode() {}
 
-// func (i *Identifier) TokenLiteral() string {
-// 	if i == nil || i.Token.Type == token.EOF {
-// 		return ""
-// 	}
-// 	return i.Token.Literal
-// }
+func (ae *AssignmentExpression) TokenLiteral() string {
+	return ae.Token.Literal
+}
 
-// func (i *Identifier) String() string {
-// 	if i == nil {
-// 		return ""
-// 	}
-// 	return i.Value
-// }
+func (ae *AssignmentExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString(ae.Left.String())
+	out.WriteString(" ")
+	out.WriteString(ae.Token.Literal)
+	out.WriteString(" ")
+	out.WriteString(ae.Right.String())
+	return out.String()
+}
