@@ -78,7 +78,7 @@ func (repl *REPL) handleLine(line string) bool {
 
 		println("")
 		println("wat:")
-		println(wat.GenerateWAT(program))
+		println(wat.GenerateWAT(program, true))
 	}
 	return true
 }

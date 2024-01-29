@@ -22,10 +22,19 @@ type Parser struct {
 	definedTypes map[string]bool
 }
 
+type parseRule struct {
+	prefixFn prefixParseFn
+	infixFn  infixParseFn
+}
+
 type (
 	prefixParseFn func() ast.Expression
 	infixParseFn  func(ast.Expression) ast.Expression
 )
+
+type ParseFn interface {
+	Parse(p *Parser) ast.Expression
+}
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
@@ -33,45 +42,10 @@ func New(l *lexer.Lexer) *Parser {
 		errors:       []string{},
 		definedTypes: make(map[string]bool),
 	}
-
-	// Register prefix parsing functions for identifiers, integers,
-	// booleans, and the negation operator.
 	p.prefixParseFns = make(map[token.Type]prefixParseFn)
-	p.registerPrefix(token.IDENTIFIER, p.parseIdentifier)
-	p.registerPrefix(token.STRING, p.parseStringLiteral)
-	p.registerPrefix(token.NUMBER, p.parseIntegerLiteral)
-	p.registerPrefix(token.TRUE, p.parseBooleanLiteral)
-	p.registerPrefix(token.FALSE, p.parseBooleanLiteral)
-	p.registerPrefix(token.BANG, p.parsePrefixExpression)
-	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
-	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
-	numberTypes := []token.Type{token.U8, token.U16, token.U32, token.U64,
-		token.I8, token.I16, token.I32, token.I64,
-		token.F8, token.F16, token.F32, token.F64}
-	for _, numberType := range numberTypes {
-		p.registerPrefix(numberType, func() ast.Expression {
-			return p.parseNumberType(numberType)
-		})
-	}
-	// Register infix parsing functions for arithmetic operators and
-	// comparison operators.
 	p.infixParseFns = make(map[token.Type]infixParseFn)
-	p.registerInfix(token.ASSIGN, p.parseAssignmentExpression)
-	p.registerInfix(token.PLUS, p.parseInfixExpression)
-	p.registerInfix(token.MINUS, p.parseInfixExpression)
-	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
-	p.registerInfix(token.SLASH, p.parseInfixExpression)
-	p.registerInfix(token.EQ, p.parseInfixExpression)
-	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
-	p.registerInfix(token.LT, p.parseInfixExpression)
-	p.registerInfix(token.GT, p.parseInfixExpression)
 
-	// Register infix parsing function for logical operators
-	p.registerInfix(token.AND, p.parseInfixExpression)
-	p.registerInfix(token.OR, p.parseInfixExpression)
-
-	// Register parsing function for if expressions
-	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerParseRules()
 
 	// Read two tokens to initialize curToken and peekToken.
 	p.nextToken()
@@ -86,6 +60,48 @@ func (p *Parser) registerPrefix(tokenType token.Type, fn prefixParseFn) {
 
 func (p *Parser) registerInfix(tokenType token.Type, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerParseRules() {
+	parseRules := map[token.Type]parseRule{
+		token.IDENTIFIER: {prefixFn: p.parseIdentifier},
+		token.STRING:     {prefixFn: p.parseStringLiteral},
+		token.NUMBER:     {prefixFn: p.parseIntegerLiteral},
+		token.TRUE:       {prefixFn: p.parseBooleanLiteral},
+		token.FALSE:      {prefixFn: p.parseBooleanLiteral},
+		token.BANG:       {prefixFn: p.parsePrefixExpression},
+		token.MINUS: {
+			prefixFn: p.parsePrefixExpression,
+			infixFn:  p.parseInfixExpression,
+		},
+		token.LPAREN:   {prefixFn: p.parseGroupedExpression},
+		token.ASSIGN:   {infixFn: p.parseAssignmentExpression},
+		token.PLUS:     {infixFn: p.parseInfixExpression},
+		token.ASTERISK: {infixFn: p.parseInfixExpression},
+		token.SLASH:    {infixFn: p.parseInfixExpression},
+		token.EQ:       {infixFn: p.parseInfixExpression},
+		token.NOT_EQ:   {infixFn: p.parseInfixExpression},
+		token.LT:       {infixFn: p.parseInfixExpression},
+		token.GT:       {infixFn: p.parseInfixExpression},
+		token.AND:      {infixFn: p.parseInfixExpression},
+		token.OR:       {infixFn: p.parseInfixExpression},
+	}
+	numberTypes := []token.Type{token.U8, token.U16, token.U32, token.U64,
+		token.I8, token.I16, token.I32, token.I64,
+		token.F8, token.F16, token.F32, token.F64}
+	for _, numberType := range numberTypes {
+		p.registerPrefix(numberType, func() ast.Expression {
+			return p.parseNumberType(numberType)
+		})
+	}
+	for tokenType, rule := range parseRules {
+		if rule.prefixFn != nil {
+			p.registerPrefix(tokenType, rule.prefixFn)
+		}
+		if rule.infixFn != nil {
+			p.registerInfix(tokenType, rule.infixFn)
+		}
+	}
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
@@ -121,6 +137,9 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
+	if p.curToken.Type == token.SEMICOLON {
+		p.nextToken()
+	}
 }
 
 // expectPeek checks if the next token is of the expected type.

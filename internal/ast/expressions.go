@@ -51,42 +51,6 @@ func (be *BinaryExpression) String() string {
 	return fmt.Sprintf("(%s %s %s)", be.Left.String(), be.Operator.Literal, be.Right.String())
 }
 
-type IfExpression struct {
-	Token       token.Token
-	Condition   Expression
-	Consequence *BlockStatement
-	Alternative *BlockStatement
-}
-
-func (ie *IfExpression) expressionNode() {}
-
-func (ie *IfExpression) TokenLiteral() string {
-	if ie == nil || ie.Token.Type == token.EOF {
-		return ""
-	}
-	return ie.Token.Literal
-}
-
-func (ie *IfExpression) String() string {
-	if ie == nil {
-		return ""
-	}
-	var out bytes.Buffer
-	out.WriteString("if")
-	out.WriteString(" ")
-	out.WriteString(ie.Condition.String())
-	out.WriteString(" ")
-	out.WriteString(ie.Consequence.String())
-	out.WriteString(" ")
-
-	if ie.Alternative != nil {
-		out.WriteString("else ")
-		out.WriteString(ie.Alternative.String())
-	}
-
-	return out.String()
-}
-
 type WhileExpression struct {
 	Condition Expression
 	Body      Statement

@@ -32,11 +32,12 @@ func findFunctionDeclarations(node ast.Node) {
 }
 
 // GenerateWAT generates WAT IR code for a given AST.
-func GenerateWAT(node ast.Node) string {
+func GenerateWAT(node ast.Node, withMemoryManagement bool) string {
+	functionDeclarations = make(map[string]*ast.FunctionDeclaration)
 	findFunctionDeclarations(node)
 	switch n := node.(type) {
 	case *ast.Program:
-		return generateStatements(n.Statements)
+		return generateStatements(n.Statements, withMemoryManagement)
 	}
 	return ""
 }
@@ -84,13 +85,18 @@ func generateMemoryManagementFunctions() string {
 `
 }
 
-func generateStatements(stmts []ast.Statement) string {
+func generateStatements(stmts []ast.Statement, withMemoryManagement bool) string {
 	var out strings.Builder
 	out.WriteString("(module\n")
 
-	out.WriteString(generateMemoryManagementFunctions())
+	if withMemoryManagement {
+		out.WriteString(generateMemoryManagementFunctions())
+	}
 
 	for _, stmt := range stmts {
+		if stmt == nil {
+			continue
+		}
 		out.WriteString(generateStatement(stmt))
 	}
 	out.WriteString(")\n")
@@ -162,6 +168,34 @@ func generatePrefixExpression(prefix *ast.PrefixExpression) string {
 	}
 }
 
+func generateBlockStatement(block *ast.BlockStatement) string {
+	var out strings.Builder
+	for _, stmt := range block.Statements {
+		out.WriteString("\t")
+		out.WriteString(generateStatement(stmt))
+		out.WriteString("\n")
+	}
+	return out.String()
+}
+
+func generateIfStatement(e *ast.IfStatement) string {
+	var out strings.Builder
+	out.WriteString("(if\n")
+	out.WriteString("(i32.eqz ")
+	out.WriteString(generateExpression(e.Condition))
+	out.WriteString(")\n")
+	out.WriteString("  (then\n")
+	out.WriteString(generateBlockStatement(e.Consequence))
+	out.WriteString("  )\n")
+	if e.Alternative != nil {
+		out.WriteString("  (else\n")
+		out.WriteString(generateBlockStatement(e.Alternative))
+		out.WriteString("  )\n")
+	}
+	out.WriteString(")\n")
+	return out.String()
+}
+
 func generateStatement(stmt ast.Statement) string {
 	if stmt == nil {
 		return ""
@@ -203,6 +237,8 @@ func generateStatement(stmt ast.Statement) string {
 			out.WriteString(generateStatement(stmt))
 		}
 		return out.String()
+	case *ast.IfStatement:
+		return generateIfStatement(s)
 	case *ast.FunctionStatement:
 		var out strings.Builder
 		if s == nil {
@@ -232,6 +268,8 @@ func generateStatement(stmt ast.Statement) string {
 		}
 		out.WriteString(")\n")
 		return out.String()
+	case *ast.ExpressionStatement:
+		return generateExpression(s.Expression)
 	}
 	return ""
 }
@@ -254,18 +292,6 @@ func generateExpression(expr ast.Expression) string {
 		return generateInfixExpression(e)
 	case *ast.Identifier:
 		return fmt.Sprintf("(local.get $%s)", e.Value)
-	case *ast.IfExpression:
-		var out strings.Builder
-		out.WriteString(fmt.Sprintf("%s\n", generateExpression(e.Condition)))
-		out.WriteString("(if\n")
-		out.WriteString("(result i32)\n")
-		out.WriteString("(param i32 i32)\n")
-		out.WriteString("(export \"add\")\n")
-		out.WriteString("(local.get 0)\n")
-		out.WriteString("(local.get 1)\n")
-		out.WriteString("(i32.add)\n")
-		out.WriteString(")\n")
-		return out.String()
 	case *ast.FunctionCall:
 		return generateFunctionCall(e)
 	case *ast.ArrayLiteral:

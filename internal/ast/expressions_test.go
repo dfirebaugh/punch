@@ -22,12 +22,3 @@ func TestBinaryExpression(t *testing.T) {
 	assert.Equal(t, "(5 + 10)", be.String())
 	assert.Equal(t, "+", be.TokenLiteral())
 }
-
-func TestIfExpression(t *testing.T) {
-	cond := &Boolean{Token: token.Token{Type: token.TRUE, Literal: "true"}, Value: true}
-	cons := &BlockStatement{Statements: []Statement{&ExpressionStatement{Expression: &Identifier{Token: token.Token{Type: token.IDENTIFIER, Literal: "foo"}, Value: "foo"}}}}
-	alt := &BlockStatement{Statements: []Statement{&ExpressionStatement{Expression: &Identifier{Token: token.Token{Type: token.IDENTIFIER, Literal: "bar"}, Value: "bar"}}}}
-	ie := &IfExpression{Token: token.Token{Type: token.IF, Literal: "if"}, Condition: cond, Consequence: cons, Alternative: alt}
-	assert.Equal(t, "if true { foo } else { bar }", ie.String())
-	assert.Equal(t, "if", ie.TokenLiteral())
-}

@@ -243,7 +243,7 @@ func TestParseGroupedExpression(t *testing.T) {
 	}
 }
 
-func TestParseIfExpression(t *testing.T) {
+func TestParseIfStatement(t *testing.T) {
 	input := "if (x < y) { x }"
 	lexer := lexer.New(input)
 	parser := New(lexer)
@@ -255,36 +255,31 @@ func TestParseIfExpression(t *testing.T) {
 		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
 	}
 
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	stmt, ok := program.Statements[0].(*ast.IfStatement)
 	if !ok {
 		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
 	}
 
-	exp, ok := stmt.Expression.(*ast.IfExpression)
-	if !ok {
-		t.Fatalf("stmt is not ast.IfExpression. got=%T", stmt.Expression)
-	}
-
-	if !testInfixExpression(t, exp.Condition, "x", "<", "y") {
+	if !testInfixExpression(t, stmt.Condition, "x", "<", "y") {
 		return
 	}
 
-	if len(exp.Consequence.Statements) != 1 {
-		t.Errorf("consequence is not 1 statement. got=%d\n", len(exp.Consequence.Statements))
+	if len(stmt.Consequence.Statements) != 1 {
+		t.Errorf("consequence is not 1 statement. got=%d\n", len(stmt.Consequence.Statements))
 		return
 	}
 
-	cons, ok := exp.Consequence.Statements[0].(*ast.BlockStatement)
+	cons, ok := stmt.Consequence.Statements[0].(*ast.BlockStatement)
 	if !ok {
-		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T", exp.Consequence.Statements[0])
+		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T", stmt.Consequence.Statements[0])
 	}
 
 	if cons.Statements[0].(*ast.ExpressionStatement).Expression.(*ast.Identifier).Token.Literal != "x" {
 		t.Fatalf("cons.Statements[0] is not ast.ExpressionStatement. got=%T", cons.Statements[0])
 	}
 
-	if exp.Alternative != nil {
-		t.Errorf("exp.Alternative was not nil. got=%+v", exp.Alternative)
+	if stmt.Alternative != nil {
+		t.Errorf("exp.Alternative was not nil. got=%+v", stmt.Alternative)
 	}
 }
 
@@ -345,7 +340,7 @@ func TestParseFunctionStatement(t *testing.T) {
 }
 
 func TestParseFunctionParametersLexing(t *testing.T) {
-	input := "pub i8 addTwo(x i8, y string) {return x + y;}"
+	input := "pub i8 addTwo(x i8, y string) {return x + y; }"
 	l := lexer.New(input)
 	p := New(l)
 
@@ -365,7 +360,6 @@ func TestParseFunctionParametersLexing(t *testing.T) {
 		{Type: token.IDENTIFIER, Literal: "x"},
 		{Type: token.PLUS, Literal: "+"},
 		{Type: token.IDENTIFIER, Literal: "y"},
-		{Type: token.SEMICOLON, Literal: ";"},
 		{Type: token.RBRACE, Literal: "}"},
 		{Type: token.EOF, Literal: ""},
 	}
@@ -433,13 +427,13 @@ func TestParseFunctionParameters(t *testing.T) {
 
 func TestParseComment(t *testing.T) {
 	input := `i8 commentFn() {
-		i8 x = 5; 
+		i8 x = 5
 		/*
 		This is a multi-line comment
 		that spans multiple lines.
 		*/
-		i8 y = 10;
-		return y + x;
+		i8 y = 10
+		return y + x
 	}`
 	expected := `i8 commentFn() { i8 x = 5; i8 y = 10; return (y + x); }`
 
@@ -575,6 +569,65 @@ func TestParseStructLiteral(t *testing.T) {
 
 	for _, e := range p.Errors() {
 		t.Errorf("parser has errors: %s", e)
+	}
+}
+
+func TestIfCondition(t *testing.T) {
+	input := `
+i8 main() {
+	if 1 == 1 {
+		return 1;
+	}
+	return 0
+}`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	println(program.JSONPretty())
+	for _, s := range program.Statements {
+		fn, ok := s.(*ast.FunctionDeclaration)
+		if !ok {
+			break
+		}
+		for i, bs := range fn.Body.Statements {
+			// println(bs.TokenLiteral())
+			println(bs.String())
+			println(i, fn.Body.Statements[i].String())
+		}
+		if s == nil {
+			continue
+		}
+		println(s.String())
+		// println(s.TokenLiteral())
+	}
+
+	for _, e := range p.Errors() {
+		t.Errorf("parser has errors: %s", e)
+	}
+}
+
+func TestParseBlockStatement(t *testing.T) {
+	input := `{
+			i8 x = 5;
+			return x;
+	}`
+
+	l := lexer.New(input)
+	p := New(l)
+	p.nextToken()
+
+	blockStmt := p.parseBlockStatement()
+	if blockStmt == nil {
+		t.Fatalf("parseBlockStatement() returned nil")
+	}
+
+	println(blockStmt.Statements[0].String())
+	println(blockStmt.Statements[1].String())
+	if blockStmt.Statements[0].String() != "x = 5" {
+		t.Errorf("blockStmt.Statements[0].String not 'x = 5'. got=%s", blockStmt.Statements[0].String())
+	}
+	if blockStmt.Statements[1].String() != "return x;" {
+		t.Errorf("blockStmt.Statements[1].String not'return x;'. got=%s", blockStmt.Statements[1].String())
 	}
 }
 

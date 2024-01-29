@@ -50,4 +50,5 @@ To execute the `.wasm` file, you can run `go run ./examples/adder/`.
 - [WebAssembly Text Format (WAT)](https://webassembly.github.io/spec/core/text/index.html)
 - [WebAssembly Binary Format Specification](https://webassembly.github.io/spec/core/binary/index.html)
 - [WABT - The WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt)
+    - [wasm-validate](https://webassembly.github.io/wabt/doc/wasm-validate.1.html) (included in wabt)
 - [wat2wasm in browser](https://webassembly.github.io/wabt/demo/wat2wasm/)

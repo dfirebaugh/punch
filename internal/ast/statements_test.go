@@ -6,6 +6,8 @@ import (
 	"github.com/dfirebaugh/punch/internal/ast"
 	"github.com/dfirebaugh/punch/internal/lexer"
 	"github.com/dfirebaugh/punch/internal/parser"
+	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLetStatement(t *testing.T) {
@@ -61,11 +63,11 @@ func TestReturnStatement(t *testing.T) {
 }
 
 func TestFunctionStatement(t *testing.T) {
-	input := "i8 add(x i8, y i8) { return x + y; }"
+	input := "i8 add(x i8, y i8) { return x + y }"
 	p, program := parse(input, t)
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
+	if len(program.Statements) != 2 {
 		t.Fatalf("program does not contain 1 statements. got=%d\n", len(program.Statements))
 	}
 
@@ -98,6 +100,15 @@ func TestFunctionStatement(t *testing.T) {
 	if funcStmt.Body.String() != "{ return (x + y); }" {
 		t.Fatalf("funcStmt.Body.String() not '{ return (x + y); }'. got=%s", funcStmt.Body.String())
 	}
+}
+
+func TestIfStatement(t *testing.T) {
+	cond := &ast.Boolean{Token: token.Token{Type: token.TRUE, Literal: "true"}, Value: true}
+	cons := &ast.BlockStatement{Statements: []ast.Statement{&ast.ExpressionStatement{Expression: &ast.Identifier{Token: token.Token{Type: token.IDENTIFIER, Literal: "foo"}, Value: "foo"}}}}
+	alt := &ast.BlockStatement{Statements: []ast.Statement{&ast.ExpressionStatement{Expression: &ast.Identifier{Token: token.Token{Type: token.IDENTIFIER, Literal: "bar"}, Value: "bar"}}}}
+	ie := &ast.IfStatement{Token: token.Token{Type: token.IF, Literal: "if"}, Condition: cond, Consequence: cons, Alternative: alt}
+	assert.Equal(t, "if true { foo } else { bar }", ie.String())
+	assert.Equal(t, "if", ie.TokenLiteral())
 }
 
 func parse(input string, t *testing.T) (*parser.Parser, *ast.Program) {

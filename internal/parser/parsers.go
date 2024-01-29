@@ -13,8 +13,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 	program.Statements = []ast.Statement{}
 
 	for !p.curTokenIs(token.EOF) {
-		stmt := p.parseStatement()
-		program.Statements = append(program.Statements, stmt)
+		program.Statements = append(program.Statements, p.parseStatement())
 		p.nextToken()
 	}
 
@@ -48,9 +47,14 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseLetStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
+	case token.IF:
+		return p.parseIfStatement()
 	case token.LBRACE:
 		return p.parseBlockStatement()
 	default:
+		if p.curTokenIs(token.RBRACE) && p.peekTokenIs(token.EOF) {
+			return nil
+		}
 		return p.parseExpressionStatement()
 	}
 }
@@ -96,11 +100,6 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	p.nextToken()
 	stmt.Value = p.parseExpression(LOWEST)
 
-	// Optionally, consume a semicolon if it's there
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-
 	return stmt
 }
 
@@ -109,10 +108,6 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	p.nextToken()
 
 	stmt.ReturnValue = p.parseExpression(LOWEST)
-
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
 
 	if stmt.ReturnValue == nil {
 		p.errors = append(p.errors, "expected expression after 'return'")
@@ -124,11 +119,6 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 	stmt.Expression = p.parseExpression(LOWEST)
-
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-
 	return stmt
 }
 
@@ -240,14 +230,10 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	return exp
 }
 
-func (p *Parser) parseIfExpression() ast.Expression {
-	expression := &ast.IfExpression{Token: p.curToken}
+func (p *Parser) parseIfStatement() *ast.IfStatement {
+	expression := &ast.IfStatement{Token: p.curToken}
 
-	if !p.expectPeek(token.LPAREN) {
-		return nil
-	}
-
-	p.nextToken()
+	p.nextToken() // Skip 'if'
 	expression.Condition = p.parseExpression(LOWEST)
 
 	if !p.expectPeek(token.LBRACE) {
@@ -257,6 +243,9 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	expression.Consequence = p.parseBlockStatement()
 
 	if p.peekTokenIs(token.ELSE) {
+		if p.curTokenIs(token.RBRACE) {
+			p.nextToken()
+		}
 		p.nextToken()
 
 		if !p.expectPeek(token.LBRACE) {
@@ -264,8 +253,10 @@ func (p *Parser) parseIfExpression() ast.Expression {
 		}
 
 		expression.Alternative = p.parseBlockStatement()
+		if p.curTokenIs(token.RBRACE) {
+			p.nextToken()
+		}
 	}
-
 	return expression
 }
 
@@ -279,6 +270,10 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		stmt := p.parseStatement()
 		if stmt != nil {
 			block.Statements = append(block.Statements, stmt)
+		}
+		switch stmt.(type) {
+		case *ast.ReturnStatement:
+			return block
 		}
 		p.nextToken()
 	}
@@ -397,6 +392,10 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 
 	body := p.parseBlockStatement()
 
+	if p.curTokenIs(token.RBRACE) {
+		p.nextToken()
+	}
+
 	stmt := &ast.FunctionStatement{
 		IsExported: isExported,
 		ReturnType: returnType,
@@ -457,12 +456,6 @@ func (p *Parser) parseStructFields() []*ast.StructField {
 			return nil
 		}
 		fields = append(fields, field)
-
-		if p.curTokenIs(token.SEMICOLON) {
-			p.nextToken()
-			p.nextToken()
-			continue
-		}
 		p.nextToken()
 	}
 
@@ -557,10 +550,6 @@ func (p *Parser) parseTypeBasedVariableDeclaration() ast.Statement {
 	p.nextToken()
 	p.nextToken()
 	varDecl.Value = p.parseExpression(LOWEST)
-
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
 
 	return varDecl
 }

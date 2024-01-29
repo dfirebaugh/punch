@@ -11,7 +11,7 @@ func Compile(source string) (string, []byte) {
 	l := lexer.New(source)
 	p := parser.New(l)
 	program := p.ParseProgram()
-	wat := wat.GenerateWAT(program)
+	wat := wat.GenerateWAT(program, true)
 	wasm, err := wasmtime.Wat2Wasm(wat)
 	if err != nil {
 		panic(err)

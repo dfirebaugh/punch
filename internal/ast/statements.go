@@ -49,6 +49,43 @@ func (ls *LetStatement) String() string {
 	return out.String()
 }
 
+type IfStatement struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
+func (ie *IfStatement) statementNode()  {}
+func (ie *IfStatement) expressionNode() {}
+
+func (ie *IfStatement) TokenLiteral() string {
+	if ie == nil || ie.Token.Type == token.EOF {
+		return ""
+	}
+	return ie.Token.Literal
+}
+
+func (ie *IfStatement) String() string {
+	if ie == nil {
+		return ""
+	}
+	var out bytes.Buffer
+	out.WriteString("if")
+	out.WriteString(" ")
+	out.WriteString(ie.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(ie.Consequence.String())
+	out.WriteString(" ")
+
+	if ie.Alternative != nil {
+		out.WriteString("else ")
+		out.WriteString(ie.Alternative.String())
+	}
+
+	return out.String()
+}
+
 type ReturnStatement struct {
 	Token       token.Token
 	ReturnValue Expression
