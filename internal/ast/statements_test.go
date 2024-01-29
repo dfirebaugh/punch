@@ -63,7 +63,7 @@ func TestReturnStatement(t *testing.T) {
 }
 
 func TestFunctionStatement(t *testing.T) {
-	input := "i8 add(x i8, y i8) { return x + y }"
+	input := "i8 add(i8 x, i8 y) { return x + y }"
 	p, program := parse(input, t)
 	checkParserErrors(t, p)
 
