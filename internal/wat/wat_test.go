@@ -28,7 +28,7 @@ func _TestGenerateWAT(t *testing.T) {
 (local.set $x x)
 )
 `
-		assert.Equal(t, expected, wat.GenerateWAT(ast))
+		assert.Equal(t, expected, wat.GenerateWAT(ast, false))
 	})
 
 	t.Run("generate WAT code for a program with one return statement", func(t *testing.T) {
@@ -74,7 +74,7 @@ func _TestGenerateWAT(t *testing.T) {
 (return (local.get $x))
 )
 `
-		assert.Equal(t, expected, wat.GenerateWAT(ast))
+		assert.Equal(t, expected, wat.GenerateWAT(ast, false))
 	})
 
 	t.Run("generate WAT code for a program with one function declaration", func(t *testing.T) {
