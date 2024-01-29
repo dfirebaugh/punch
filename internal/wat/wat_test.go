@@ -45,7 +45,7 @@ func _TestGenerateWAT(t *testing.T) {
 (return (i32.const 1))
 )
 `
-		assert.Equal(t, expected, wat.GenerateWAT(ast))
+		assert.Equal(t, expected, wat.GenerateWAT(ast, false))
 	})
 
 	t.Run("generate WAT code for a program with one block statement", func(t *testing.T) {
@@ -110,6 +110,6 @@ func _TestGenerateWAT(t *testing.T) {
 )
 )
 `
-		assert.Equal(t, expected, wat.GenerateWAT(ast))
+		assert.Equal(t, expected, wat.GenerateWAT(ast, false))
 	})
 }
