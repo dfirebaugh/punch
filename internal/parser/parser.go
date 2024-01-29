@@ -113,6 +113,13 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		if p.peekTokenIs(token.LBRACE) {
 			return p.parseStructLiteral()
 		}
+
+		if p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LPAREN) {
+			println("parsing function call")
+			ident := p.parseIdentifier()
+			p.nextToken()
+			return p.parseFunctionCall(ident)
+		}
 	}
 
 	prefix := p.prefixParseFns[p.curToken.Type]

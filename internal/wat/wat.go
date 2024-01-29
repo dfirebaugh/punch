@@ -179,6 +179,9 @@ func generateBlockStatement(block *ast.BlockStatement) string {
 }
 
 func generateIfStatement(e *ast.IfStatement) string {
+	if e == nil {
+		return ""
+	}
 	var out strings.Builder
 	out.WriteString("(if\n")
 	out.WriteString("(i32.eqz ")
@@ -227,9 +230,9 @@ func generateStatement(stmt ast.Statement) string {
 		)
 	case *ast.ReturnStatement:
 		if s.ReturnValue == nil {
-			return "(return)\n"
+			return "\t(return)"
 		}
-		return fmt.Sprintf("(return %s)\n", generateExpression(s.ReturnValue))
+		return fmt.Sprintf("\t(return %s)", generateExpression(s.ReturnValue))
 	case *ast.BlockStatement:
 		var out strings.Builder
 		out.WriteString("\n")
@@ -255,13 +258,13 @@ func generateStatement(stmt ast.Statement) string {
 		if s.Parameters != nil {
 			for _, param := range s.Parameters {
 				if param != nil {
-					out.WriteString(fmt.Sprintf("(param $%s i32)\n", param.Identifier.Value))
+					out.WriteString(fmt.Sprintf("(param $%s i32)", param.Identifier.Value))
 				} else {
-					out.WriteString("(param)\n")
+					out.WriteString("(param)")
 				}
 			}
 		}
-		out.WriteString(fmt.Sprintf("(result %s)\n", returnType))
+		out.WriteString(fmt.Sprintf("(result %s)", returnType))
 		bodyStr := generateStatement(s.Body)
 		if bodyStr != "" {
 			out.WriteString(fmt.Sprintf("%s\n", bodyStr))

@@ -233,7 +233,7 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 func (p *Parser) parseIfStatement() *ast.IfStatement {
 	expression := &ast.IfStatement{Token: p.curToken}
 
-	p.nextToken() // Skip 'if'
+	p.nextToken()
 	expression.Condition = p.parseExpression(LOWEST)
 
 	if !p.expectPeek(token.LBRACE) {
@@ -309,104 +309,6 @@ func (p *Parser) parseComment() {
 	}
 }
 
-func (p *Parser) parseFunctionParameters() []*ast.Parameter {
-	var parameters []*ast.Parameter
-
-	if !p.curTokenIs(token.LPAREN) {
-		return nil
-	}
-
-	p.nextToken()
-
-	for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
-		param := p.parseFunctionParameter()
-		if param == nil {
-			return nil
-		}
-
-		parameters = append(parameters, param)
-
-		p.nextToken()
-		if p.curTokenIs(token.COMMA) {
-			p.nextToken()
-		}
-	}
-
-	if p.curTokenIs(token.RPAREN) {
-	} else {
-		return nil
-	}
-
-	return parameters
-}
-
-func (p *Parser) parseFunctionParameter() *ast.Parameter {
-	if !p.curTokenIs(token.IDENTIFIER) {
-		fmt.Printf("Current Token: %s (Type: %s)\n", p.curToken.Literal, p.curToken.Type)
-		fmt.Printf("Expected IDENTIFIER, got %s (Type: %s)\n", p.peekToken.Literal, p.peekToken.Type)
-		return nil
-	}
-	paramName := p.curToken.Literal
-
-	p.nextToken()
-	if !p.isTypeToken(p.curToken) {
-		p.peekError(token.IDENTIFIER)
-		return nil
-	}
-	paramType := p.curToken.Type
-
-	return &ast.Parameter{
-		Identifier: &ast.Identifier{Value: paramName},
-		Type:       paramType,
-	}
-}
-
-func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
-	var isExported bool
-	var returnType ast.Expression
-
-	if p.curToken.Type == token.PUB {
-		isExported = true
-		p.nextToken()
-	}
-
-	if p.isTypeToken(p.curToken) {
-		returnType = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		p.nextToken()
-	} else {
-		p.errors = append(p.errors, "expected return type before function name")
-		return nil
-	}
-
-	ident := p.parseIdentifier()
-	if ident == nil {
-		return nil
-	}
-	p.nextToken()
-
-	params := p.parseFunctionParameters()
-	if !p.expectPeek(token.LBRACE) {
-		return nil
-	}
-	p.nextToken()
-
-	body := p.parseBlockStatement()
-
-	if p.curTokenIs(token.RBRACE) {
-		p.nextToken()
-	}
-
-	stmt := &ast.FunctionStatement{
-		IsExported: isExported,
-		ReturnType: returnType,
-		Name:       ident.(*ast.Identifier),
-		Parameters: params,
-		Body:       body,
-	}
-
-	return stmt
-}
-
 func (p *Parser) parseStructDeclaration() *ast.StructDeclaration {
 	structDecl := &ast.StructDeclaration{
 		Token: p.curToken,
@@ -440,9 +342,9 @@ func (p *Parser) parseStructField() *ast.StructField {
 	}
 	p.nextToken()
 	field := &ast.StructField{
-		Token: p.curToken,
-		Name:  &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
-		Type:  p.peekToken.Type,
+		Token: p.peekToken,
+		Name:  &ast.Identifier{Token: p.peekToken, Value: p.peekToken.Literal},
+		Type:  p.curToken.Type,
 	}
 	return field
 }

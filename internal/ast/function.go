@@ -53,6 +53,8 @@ func (fd *FunctionDeclaration) String() string {
 
 type FunctionCall struct {
 	FunctionName string
+	Token        token.Token
+	Function     Expression
 	Arguments    []Expression
 }
 

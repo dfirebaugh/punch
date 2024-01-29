@@ -17,9 +17,9 @@ Also, I'm just kind of toying around with making a language.
 * Functions are private by default and can easily be exported with the `pub` keyword.
 
 The ideal syntax will look similar to below.
-```
+```rust
 // addTwo is an exported function that adds two ints together and returns the result.
-pub int addTwo(a int, b int) {
+pub i8 addTwo(i8 a, i8 b) {
     return a + b;
 }
 ```
