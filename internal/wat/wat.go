@@ -113,17 +113,12 @@ func generateStringLiteral(str *ast.StringLiteral) string {
 
 func generateFunctionCall(call *ast.FunctionCall) string {
 	var out strings.Builder
+	out.WriteString(fmt.Sprintf("(call $%s ", call.FunctionName))
 	for _, arg := range call.Arguments {
-		out.WriteString(generateExpression(arg) + "\n")
+		out.WriteString(generateExpression(arg))
+		out.WriteString(" ")
 	}
-	out.WriteString(fmt.Sprintf("(call $%s)\n", call.FunctionName))
-
-	if funcDecl, exists := functionDeclarations[call.FunctionName]; exists {
-		if funcDecl.ReturnType.Type == token.STRING {
-			out.WriteString(fmt.Sprintf("(call $%s (local.get 0)) ;; deallocate string memory\n", MemoryDeallocateFunc))
-		}
-	}
-
+	out.WriteString(")")
 	return out.String()
 }
 
@@ -183,19 +178,17 @@ func generateIfStatement(e *ast.IfStatement) string {
 		return ""
 	}
 	var out strings.Builder
-	out.WriteString("(if\n")
-	out.WriteString("(i32.eqz ")
-	out.WriteString(generateExpression(e.Condition))
-	out.WriteString(")\n")
-	out.WriteString("  (then\n")
-	out.WriteString(generateBlockStatement(e.Consequence))
-	out.WriteString("  )\n")
+	out.WriteString("(if ")
+	out.WriteString(generateExpression(e.Condition)) // Generates the condition expression
+	out.WriteString(" (then ")
+	out.WriteString(generateBlockStatement(e.Consequence)) // Generates the consequent block
+	out.WriteString(" )")
 	if e.Alternative != nil {
-		out.WriteString("  (else\n")
-		out.WriteString(generateBlockStatement(e.Alternative))
-		out.WriteString("  )\n")
+		out.WriteString(" (else ")
+		out.WriteString(generateBlockStatement(e.Alternative)) // Generates the alternative block, if it exists
+		out.WriteString(" )")
 	}
-	out.WriteString(")\n")
+	out.WriteString(")")
 	return out.String()
 }
 

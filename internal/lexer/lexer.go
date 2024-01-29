@@ -66,6 +66,8 @@ func (l *Lexer) evaluateType(t token.Token) token.Type {
 			return m
 		}
 		return l.evaluateSpecialCharacter(t.Literal)
+	case t.Literal == token.BOOL:
+		return token.BOOL
 	case t.IsSingleCharIdentifier():
 		return token.IDENTIFIER
 	case t.IsString():

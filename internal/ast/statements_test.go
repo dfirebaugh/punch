@@ -67,7 +67,7 @@ func TestFunctionStatement(t *testing.T) {
 	p, program := parse(input, t)
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 2 {
+	if len(program.Statements) != 1 {
 		t.Fatalf("program does not contain 1 statements. got=%d\n", len(program.Statements))
 	}
 

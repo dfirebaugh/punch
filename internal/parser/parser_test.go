@@ -631,6 +631,60 @@ func TestParseBlockStatement(t *testing.T) {
 	}
 }
 
+func TestParseFunctionCall(t *testing.T) {
+	input := `
+i8 add(i8 a, i8 b) {
+		return a + b;
+}
+add(2, 3);
+	`
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	println(program.JSONPretty())
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 2 {
+		t.Fatalf("program.Statements does not contain 2 statements. got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[1].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Second statement is not ast.ExpressionStatement. got=%T", program.Statements[1])
+	}
+
+	functionCall, ok := stmt.Expression.(*ast.FunctionCall)
+	if !ok {
+		t.Fatalf("Expression is not ast.FunctionCall. got=%T", stmt.Expression)
+	}
+
+	if !testIdentifier(t, functionCall.Function, "add") {
+		return
+	}
+
+	if len(functionCall.Arguments) != 2 {
+		t.Fatalf("Function call wrong number of arguments. want=2, got=%d", len(functionCall.Arguments))
+	}
+
+	testLiteralExpression(t, functionCall.Arguments[0], 2)
+	testLiteralExpression(t, functionCall.Arguments[1], 3)
+}
+
+func TestParseBoolReturn(t *testing.T) {
+	input := `
+bool isEq(i8 a, i8 b) {
+		return a == b;
+}
+	`
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	println(program.JSONPretty())
+	checkParserErrors(t, p)
+}
+
 func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
 	lit, ok := il.(*ast.IntegerLiteral)
 	if !ok {

@@ -7,6 +7,29 @@ import (
 	"github.com/dfirebaugh/punch/internal/token"
 )
 
+func (p *Parser) parseFunctionDeclaration() *ast.FunctionDeclaration {
+	stmt := &ast.FunctionDeclaration{ReturnType: p.curToken}
+	if !p.isTypeToken(p.curToken) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Name = &ast.Identifier{Value: p.curToken.Literal}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Parameters = p.parseFunctionParameters()
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Body = p.parseBlockStatement()
+
+	p.nextToken()
+	return stmt
+}
+
 func (p *Parser) parseFunctionParameters() []*ast.Parameter {
 	var parameters []*ast.Parameter
 
@@ -111,6 +134,7 @@ func (p *Parser) parseFunctionCall(function ast.Expression) ast.Expression {
 		Function:     function,
 	}
 	exp.Arguments = p.parseFunctionCallArguments()
+	p.nextToken()
 	return exp
 }
 

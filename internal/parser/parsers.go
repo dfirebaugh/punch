@@ -160,29 +160,6 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	return lit
 }
 
-func (p *Parser) parseFunctionDeclaration() *ast.FunctionDeclaration {
-	stmt := &ast.FunctionDeclaration{ReturnType: p.curToken}
-
-	if !p.expectPeek(token.IDENTIFIER) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Name = &ast.Identifier{Value: p.curToken.Literal}
-
-	if !p.expectPeek(token.LPAREN) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Parameters = p.parseFunctionParameters()
-	if !p.expectPeek(token.LBRACE) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Body = p.parseBlockStatement()
-
-	return stmt
-}
-
 func (p *Parser) parseBooleanLiteral() ast.Expression {
 	return &ast.BooleanLiteral{Token: p.curToken, Value: p.curTokenIs(token.TRUE)}
 }
