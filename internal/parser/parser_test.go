@@ -298,7 +298,7 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 }
 
 func TestParseFunctionStatement(t *testing.T) {
-	input := "i8 add(x i8, y i8) { return x + y; }"
+	input := "i8 add(i8 x, i8 y) { return x + y; }"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -374,7 +374,7 @@ func TestParseFunctionParametersLexing(t *testing.T) {
 }
 
 func TestParseFunctionParameter(t *testing.T) {
-	input := "x i8"
+	input := "i8 x"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -398,7 +398,7 @@ func TestParseFunctionParameter(t *testing.T) {
 }
 
 func TestParseFunctionParameters(t *testing.T) {
-	input := "i8 addTwo(x i8, y string) {return x + y;}"
+	input := "i8 addTwo(i8 x, string y) {return x + y;}"
 	l := lexer.New(input)
 	p := New(l)
 	p.nextToken()
