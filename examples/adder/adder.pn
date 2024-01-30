@@ -3,11 +3,11 @@ bool is_eq(i32 a, i32 b) {
 }
 
 pub i32 add_two(i32 x, i32 y) {
-	return (x + y)
+	return x + y
 }
 
 pub i32 add_four(i32 a, i32 b, i32 c, i32 d) {
-	if !!is_eq(a, 2) {
+	if 1 != 1 {
 		return a - b - c - d
 	}
 	return a + b + c + d
