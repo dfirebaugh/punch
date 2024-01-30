@@ -3,14 +3,14 @@ package compiler
 import "testing"
 
 func TestRunCompiler(t *testing.T) {
-	program, _ := Compile(`pub i8 addTwo(i8 x, i8 y) {
+	program, _, _ := Compile(`pub i8 addTwo(i8 x, i8 y) {
 		return (x + y);
 	}`)
 	println(program)
 }
 
 func TestTwoFunctions(t *testing.T) {
-	program, _ := Compile(`
+	program, _, _ := Compile(`
 pub i8 addTwo(i8 x, i8 y) {
 	return (x + y);
 }

@@ -7,14 +7,27 @@ import (
 	"github.com/dfirebaugh/punch/internal/wat"
 )
 
-func Compile(source string) (string, []byte) {
+const (
+	wasmDisabled = false
+	astDisabled  = false
+)
+
+func Compile(source string) (string, []byte, string) {
 	l := lexer.New(source)
 	p := parser.New(l)
 	program := p.ParseProgram()
+	var ast string
 	wat := wat.GenerateWAT(program, true)
+	if !astDisabled {
+		ast, _ = program.JSONPretty()
+	}
+	if wasmDisabled {
+		return wat, nil, ast
+	}
 	wasm, err := wasmtime.Wat2Wasm(wat)
 	if err != nil {
 		panic(err)
 	}
-	return wat, wasm
+
+	return wat, wasm, ast
 }

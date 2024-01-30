@@ -57,8 +57,8 @@ func TestReturnStatement(t *testing.T) {
 		t.Fatalf("stmt not *ast.ReturnStatement. got=%T", stmt)
 	}
 
-	if returnStmt.ReturnValue.String() != "5" {
-		t.Fatalf("returnStmt.ReturnValue.String() not '5'. got=%s", returnStmt.ReturnValue.String())
+	if returnStmt.ReturnValues[0].String() != "5" {
+		t.Fatalf("returnStmt.ReturnValue.String() not '5'. got=%s", returnStmt.ReturnValues[0].String())
 	}
 }
 
@@ -76,9 +76,9 @@ func TestFunctionStatement(t *testing.T) {
 		t.Fatalf("stmt.TokenLiteral not 'i8'. got=%q", stmt.TokenLiteral())
 	}
 
-	funcStmt, ok := stmt.(*ast.FunctionDeclaration)
+	funcStmt, ok := stmt.(*ast.FunctionStatement)
 	if !ok {
-		t.Fatalf("stmt not *ast.FunctionDeclaration. got=%T", stmt)
+		t.Fatalf("stmt not *ast.FunctionStatement. got=%T", stmt)
 	}
 
 	if funcStmt.Name.Value != "add" {

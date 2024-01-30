@@ -19,22 +19,117 @@ func (p *Parameter) String() string {
 	return p.Identifier.String()
 }
 
-type FunctionDeclaration struct {
-	ReturnType token.Token
-	Name       *Identifier
-	Parameters []*Parameter
-	Body       *BlockStatement
+type ReturnStatement struct {
+	Token        token.Token
+	ReturnValues []Expression
 }
 
-func (fd *FunctionDeclaration) TokenLiteral() string {
-	return fd.ReturnType.Literal
+func (rs *ReturnStatement) statementNode() {}
+
+func (rs *ReturnStatement) TokenLiteral() string {
+	return rs.Token.Literal
 }
-func (fd *FunctionDeclaration) statementNode() {}
+
+func (rs *ReturnStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(rs.TokenLiteral() + " ")
+	for i, expr := range rs.ReturnValues {
+		if i > 0 {
+			out.WriteString(", ")
+		}
+		out.WriteString(expr.String())
+	}
+
+	out.WriteString(";")
+	return out.String()
+}
+
+type FunctionStatement struct {
+	IsExported  bool
+	Name        *Identifier
+	Parameters  []*Parameter
+	Body        *BlockStatement
+	ReturnTypes []Expression
+}
+
+func (f *FunctionStatement) expressionNode() {}
+func (f *FunctionStatement) statementNode()  {}
+
+func (f *FunctionStatement) TokenLiteral() string {
+	return f.ReturnTypesString()
+}
+
+func (f *FunctionStatement) ReturnTypesString() string {
+	if len(f.ReturnTypes) > 0 {
+		return f.ReturnTypes[0].TokenLiteral()
+	}
+	all := []string{"("}
+	for _, r := range f.ReturnTypes {
+		all = append(all, r.TokenLiteral())
+	}
+	all = append(all, ")")
+	return strings.Join(all, ",")
+}
+
+func (f *FunctionStatement) String() string {
+	if f == nil {
+		return ""
+	}
+
+	var params []string
+	if f.Parameters != nil {
+		params = make([]string, len(f.Parameters))
+		for i, p := range f.Parameters {
+			if p != nil {
+				params[i] = p.String()
+			} else {
+				params[i] = "nil"
+			}
+		}
+	}
+
+	var out bytes.Buffer
+	out.WriteString(f.ReturnTypesString() + " ")
+	if f.Name != nil {
+		out.WriteString(f.Name.String())
+	}
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") ")
+	if f.Body != nil {
+		out.WriteString(f.Body.String())
+	}
+	return out.String()
+}
+
+type FunctionDeclaration struct {
+	ReturnTypes []*Identifier
+	Name        *Identifier
+	Parameters  []*Parameter
+	Body        *BlockStatement
+}
+
+func (*FunctionDeclaration) statementNode() {}
+
+func (fd *FunctionDeclaration) TokenLiteral() string {
+	if len(fd.ReturnTypes) > 0 && fd.ReturnTypes[0] != nil {
+		return fd.ReturnTypes[0].TokenLiteral()
+	}
+	return ""
+}
 
 func (fd *FunctionDeclaration) String() string {
 	var out strings.Builder
 
-	out.WriteString(fd.ReturnType.Literal + " ")
+	out.WriteString("(")
+	for i, rt := range fd.ReturnTypes {
+		out.WriteString(rt.String())
+		if i < len(fd.ReturnTypes)-1 {
+			out.WriteString(", ")
+		}
+	}
+	out.WriteString(") ")
 
 	out.WriteString(fd.Name.String())
 
@@ -46,7 +141,10 @@ func (fd *FunctionDeclaration) String() string {
 		}
 	}
 	out.WriteString(") ")
-	out.WriteString(fd.Body.String())
+
+	if fd.Body != nil {
+		out.WriteString(fd.Body.String())
+	}
 
 	return out.String()
 }

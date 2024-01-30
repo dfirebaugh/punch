@@ -112,12 +112,12 @@ func TestParseReturnStatement(t *testing.T) {
 		t.Errorf("stmt.TokenLiteral not 'return'. got=%q", stmt.TokenLiteral())
 	}
 
-	if _, ok := stmt.ReturnValue.(*ast.IntegerLiteral); !ok {
-		t.Errorf("stmt.Value not *ast.IntegerLiteral. got=%T", stmt.ReturnValue)
+	if _, ok := stmt.ReturnValues[0].(*ast.IntegerLiteral); !ok {
+		t.Errorf("stmt.Value not *ast.IntegerLiteral. got=%T", stmt.ReturnValues)
 	}
 
-	if stmt.ReturnValue.TokenLiteral() != "5" {
-		t.Errorf("stmt.Value.TokenLiteral() not '5'. got=%q", stmt.ReturnValue.TokenLiteral())
+	if stmt.ReturnValues[0].TokenLiteral() != "5" {
+		t.Errorf("stmt.Value.TokenLiteral() not '5'. got=%q", stmt.ReturnValues[0].TokenLiteral())
 	}
 }
 
@@ -304,7 +304,7 @@ func TestParseFunctionStatement(t *testing.T) {
 	p := New(l)
 
 	stmt := p.parseFunctionStatement()
-
+	// println(stmt.String())
 	if stmt == nil {
 		t.Fatalf("Expected function statement, got nil")
 	}
@@ -325,6 +325,7 @@ func TestParseFunctionStatement(t *testing.T) {
 		}
 	}
 
+	println(stmt.Body.String())
 	if len(stmt.Body.Statements) != 1 {
 		t.Fatalf("Expected function body to have 1 statement, got %d", len(stmt.Body.Statements))
 	}
@@ -334,8 +335,8 @@ func TestParseFunctionStatement(t *testing.T) {
 		t.Fatalf("Expected function body to contain a return statement, got %T", stmt.Body.Statements[0])
 	}
 
-	if !testInfixExpression(t, returnStmt.ReturnValue, "x", "+", "y") {
-		t.Errorf("Unexpected return value: %v", returnStmt.ReturnValue)
+	if !testInfixExpression(t, returnStmt.ReturnValues[0], "x", "+", "y") {
+		t.Errorf("Unexpected return value: %v", returnStmt.ReturnValues)
 	}
 }
 
@@ -440,7 +441,7 @@ func TestParseComment(t *testing.T) {
 	l := lexer.New(input)
 
 	p := New(l)
-	stmt := p.parseFunctionDeclaration()
+	stmt := p.parseFunctionStatement()
 	if stmt == nil {
 		t.Errorf("statement was nil")
 		return
@@ -530,35 +531,10 @@ func TestStringLiteralReturn(t *testing.T) {
 
 func TestStructDeclaration(t *testing.T) {
 	input := `struct message {
-		sender i32
-		recipient i8
-		body string
+		i32 sender
+		i8 recipient
+		string body
 	}`
-	l := lexer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-
-	for _, s := range program.Statements {
-		println(s.String())
-	}
-
-	for _, e := range p.Errors() {
-		t.Errorf("parser has errors: %s", e)
-	}
-}
-
-func TestParseStructLiteral(t *testing.T) {
-	input := `struct message {
-		sender i32
-		recipient i8
-		body string
-	}
-	message msg = message{
-		sender: 5,
-		recipient: 10,
-		body: "hello, world!"
-	}
-	`
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -642,7 +618,7 @@ add(2, 3);
 	p := New(l)
 
 	program := p.ParseProgram()
-	println(program.JSONPretty())
+	// println(program.JSONPretty())
 	checkParserErrors(t, p)
 
 	if len(program.Statements) != 2 {

@@ -29,19 +29,19 @@ func (sf *StructField) String() string {
 	return out.String()
 }
 
-type StructDeclaration struct {
+type StructDefinition struct {
 	Token  token.Token
 	Name   *Identifier
 	Fields []*StructField
 }
 
-func (sd *StructDeclaration) statementNode() {}
+func (sd *StructDefinition) statementNode() {}
 
-func (sd *StructDeclaration) TokenLiteral() string {
+func (sd *StructDefinition) TokenLiteral() string {
 	return sd.Token.Literal
 }
 
-func (sd *StructDeclaration) String() string {
+func (sd *StructDefinition) String() string {
 	var out bytes.Buffer
 	out.WriteString(sd.TokenLiteral() + " ")
 	if sd.Name != nil {

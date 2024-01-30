@@ -2,7 +2,6 @@ package ast
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/dfirebaugh/punch/internal/token"
 )
@@ -86,27 +85,6 @@ func (ie *IfStatement) String() string {
 	return out.String()
 }
 
-type ReturnStatement struct {
-	Token       token.Token
-	ReturnValue Expression
-}
-
-func (rs *ReturnStatement) statementNode() {}
-
-func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
-
-func (rs *ReturnStatement) String() string {
-	var out bytes.Buffer
-	out.WriteString(rs.TokenLiteral() + " ")
-
-	if rs.ReturnValue != nil {
-		out.WriteString(rs.ReturnValue.String())
-	}
-
-	out.WriteString(token.SEMICOLON)
-	return out.String()
-}
-
 type BlockStatement struct {
 	Token      token.Token
 	Statements []Statement
@@ -126,52 +104,6 @@ func (bs *BlockStatement) String() string {
 		out.WriteString(s.String() + " ")
 	}
 	out.WriteString("}")
-	return out.String()
-}
-
-type FunctionStatement struct {
-	IsExported bool
-	Name       *Identifier
-	Parameters []*Parameter
-	Body       *BlockStatement
-	ReturnType Expression
-}
-
-func (f *FunctionStatement) expressionNode() {}
-func (f *FunctionStatement) statementNode()  {}
-
-func (f *FunctionStatement) TokenLiteral() string {
-	return "function"
-}
-
-func (f *FunctionStatement) String() string {
-	if f == nil {
-		return ""
-	}
-
-	var params []string
-	if f.Parameters != nil {
-		params = make([]string, len(f.Parameters))
-		for i, p := range f.Parameters {
-			if p != nil {
-				params[i] = p.String()
-			} else {
-				params[i] = "nil"
-			}
-		}
-	}
-
-	var out bytes.Buffer
-	out.WriteString("function ")
-	if f.Name != nil {
-		out.WriteString(f.Name.String())
-	}
-	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") ")
-	if f.Body != nil {
-		out.WriteString(f.Body.String())
-	}
 	return out.String()
 }
 

@@ -35,8 +35,9 @@ func _TestGenerateWAT(t *testing.T) {
 		ast := &ast.Program{
 			Statements: []ast.Statement{
 				&ast.ReturnStatement{
-					ReturnValue: &ast.Boolean{
+					ReturnValues: []ast.Expression{&ast.Boolean{
 						Value: true,
+					},
 					},
 				},
 			},
@@ -60,8 +61,7 @@ func _TestGenerateWAT(t *testing.T) {
 							},
 						},
 						&ast.ReturnStatement{
-							ReturnValue: &ast.Identifier{Value: "x"},
-						},
+							ReturnValues: []ast.Expression{&ast.Identifier{Value: "x"}}},
 					},
 				},
 			},
@@ -89,12 +89,12 @@ func _TestGenerateWAT(t *testing.T) {
 					Body: &ast.BlockStatement{
 						Statements: []ast.Statement{
 							&ast.ReturnStatement{
-								ReturnValue: &ast.InfixExpression{
+								ReturnValues: []ast.Expression{&ast.InfixExpression{
 									Left:     &ast.Identifier{Value: "x"},
 									Right:    &ast.Identifier{Value: "y"},
 									Operator: token.Token{Type: token.PLUS},
 								},
-							},
+								}},
 						},
 					},
 				},

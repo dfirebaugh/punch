@@ -2,6 +2,7 @@ package wat
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/dfirebaugh/punch/internal/ast"
@@ -83,6 +84,22 @@ func generateMemoryManagementFunctions() string {
   (param $ptr i32)  ;; Pointer to the memory block to free
 )
 `
+}
+
+func mapTypeToWAT(t string) string {
+	switch t {
+	case "u8", "i8", "u16", "i16", "u32", "i32", "bool":
+		return "i32"
+	case "u64", "i64":
+		return "i64"
+	case "f8", "f16", "f32":
+		return "f32"
+	case "f64":
+		return "f64"
+	default:
+		log.Fatalf("Unsupported type: %s", t)
+		return ""
+	}
 }
 
 func generateStatements(stmts []ast.Statement, withMemoryManagement bool) string {
@@ -178,18 +195,67 @@ func generateIfStatement(e *ast.IfStatement) string {
 		return ""
 	}
 	var out strings.Builder
-	out.WriteString("(if ")
+	out.WriteString("\t\t(if ")
 	out.WriteString(generateExpression(e.Condition)) // Generates the condition expression
 	out.WriteString(" (then ")
 	out.WriteString(generateBlockStatement(e.Consequence)) // Generates the consequent block
 	out.WriteString(" )")
 	if e.Alternative != nil {
-		out.WriteString(" (else ")
+		out.WriteString(" \t\t(else ")
 		out.WriteString(generateBlockStatement(e.Alternative)) // Generates the alternative block, if it exists
 		out.WriteString(" )")
 	}
 	out.WriteString(")")
 	return out.String()
+}
+
+func generateFunctionStatement(s *ast.FunctionStatement) string {
+	var out strings.Builder
+	if s == nil {
+		log.Println("Encountered nil *ast.FunctionStatement")
+		return ""
+	}
+	returnType := mapTypeToWAT(s.ReturnTypes[0].TokenLiteral())
+
+	out.WriteString(fmt.Sprintf("\t(func $%s ", s.Name.Value))
+	if s.IsExported {
+		out.WriteString(fmt.Sprintf("(export \"%s\") ", s.Name.Value))
+	}
+
+	for _, param := range s.Parameters {
+		out.WriteString(fmt.Sprintf("(param $%s i32) ", param.Identifier.Value)) // Assuming i32 for simplicity.
+	}
+	out.WriteString(fmt.Sprintf("(result %s)\n", returnType))
+	out.WriteString(generateBlockStatement(s.Body))
+	out.WriteString(")\n")
+
+	return out.String()
+}
+
+func generateReturnStatement(s *ast.ReturnStatement) string {
+	if s == nil {
+		log.Println("Encountered nil *ast.ReturnStatement")
+		println("returned early from generateReturnStatement ")
+		return ""
+	}
+
+	if len(s.ReturnValues) == 0 {
+		return "\t\t(return (i32.const 0)) ;; No return values, return null pointer\n"
+	} else if len(s.ReturnValues) == 1 {
+		return fmt.Sprintf("\t\t(return %s)\n", generateExpression(s.ReturnValues[0]))
+	} else {
+		var out strings.Builder
+		out.WriteString("\t\t(local $retPtr i32)\n")
+		out.WriteString(fmt.Sprintf("\t\t(local.set $retPtr (call $%s (i32.const %d)))\n", MemoryAllocateFunc, len(s.ReturnValues)*4)) // Assuming 4 bytes per value for simplicity
+
+		for i, retVal := range s.ReturnValues {
+			expr := generateExpression(retVal)
+			out.WriteString(fmt.Sprintf("\t\t(i32.store offset=%d (local.get $retPtr) %s)\n", i*4, expr))
+		}
+
+		out.WriteString("\t\t(return (local.get $retPtr))\n")
+		return out.String()
+	}
 }
 
 func generateStatement(stmt ast.Statement) string {
@@ -222,48 +288,11 @@ func generateStatement(stmt ast.Statement) string {
 			s.Name.Value,
 		)
 	case *ast.ReturnStatement:
-		if s.ReturnValue == nil {
-			return "\t(return)"
-		}
-		return fmt.Sprintf("\t(return %s)", generateExpression(s.ReturnValue))
-	case *ast.BlockStatement:
-		var out strings.Builder
-		out.WriteString("\n")
-		for _, stmt := range s.Statements {
-			out.WriteString(generateStatement(stmt))
-		}
-		return out.String()
+		return generateReturnStatement(s)
 	case *ast.IfStatement:
 		return generateIfStatement(s)
 	case *ast.FunctionStatement:
-		var out strings.Builder
-		if s == nil {
-			return ""
-		}
-		returnType := "i32" // default return type is i32
-		// if s.ReturnType != nil {
-		// 	returnType = s.ReturnType.Value // use specified return type, if any
-		// }
-		out.WriteString(fmt.Sprintf("(func $%s ", s.Name.Value))
-		if s.IsExported {
-			out.WriteString(fmt.Sprintf("(export \"%s\")", s.Name))
-		}
-		if s.Parameters != nil {
-			for _, param := range s.Parameters {
-				if param != nil {
-					out.WriteString(fmt.Sprintf("(param $%s i32)", param.Identifier.Value))
-				} else {
-					out.WriteString("(param)")
-				}
-			}
-		}
-		out.WriteString(fmt.Sprintf("(result %s)", returnType))
-		bodyStr := generateStatement(s.Body)
-		if bodyStr != "" {
-			out.WriteString(fmt.Sprintf("%s\n", bodyStr))
-		}
-		out.WriteString(")\n")
-		return out.String()
+		return generateFunctionStatement(s)
 	case *ast.ExpressionStatement:
 		return generateExpression(s.Expression)
 	}

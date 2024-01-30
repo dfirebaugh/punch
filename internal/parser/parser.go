@@ -19,7 +19,8 @@ type Parser struct {
 
 	deferStack []ast.Statement
 
-	definedTypes map[string]bool
+	definedTypes      map[string]bool
+	structDefinitions map[string]*ast.StructDefinition
 }
 
 type parseRule struct {
@@ -44,6 +45,7 @@ func New(l *lexer.Lexer) *Parser {
 	}
 	p.prefixParseFns = make(map[token.Type]prefixParseFn)
 	p.infixParseFns = make(map[token.Type]infixParseFn)
+	p.structDefinitions = make(map[string]*ast.StructDefinition)
 
 	p.registerParseRules()
 
@@ -115,9 +117,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		}
 
 		if p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LPAREN) {
-			println("parsing function call")
 			ident := p.parseIdentifier()
-			p.nextToken()
 			return p.parseFunctionCall(ident)
 		}
 	}

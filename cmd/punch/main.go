@@ -24,11 +24,15 @@ func main() {
 		panic(err)
 	}
 
-	wat, wasm := compiler.Compile(string(fileContents))
+	wat, wasm, ast := compiler.Compile(string(fileContents))
 	if outputFile == "" {
 		fmt.Println(wat)
 	} else {
 		err = os.WriteFile(outputFile+".wat", []byte(wat), 0644)
+		if err != nil {
+			panic(err)
+		}
+		err = os.WriteFile(outputFile+".ast", []byte(ast), 0644)
 		if err != nil {
 			panic(err)
 		}

@@ -15,6 +15,9 @@ func (p *Parser) ParseProgram() *ast.Program {
 	for !p.curTokenIs(token.EOF) {
 		program.Statements = append(program.Statements, p.parseStatement())
 		p.nextToken()
+		if p.curTokenIs(token.RBRACE) {
+			p.nextToken()
+		}
 	}
 
 	return program
@@ -22,7 +25,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 func (p *Parser) parseStatement() ast.Statement {
 	if p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.LPAREN) {
-		return p.parseFunctionDeclaration()
+		return p.parseFunctionStatement()
 	}
 	if p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.ASSIGN) {
 		return p.parseTypeBasedVariableDeclaration()
@@ -30,7 +33,7 @@ func (p *Parser) parseStatement() ast.Statement {
 
 	switch p.curToken.Type {
 	case token.STRUCT:
-		return p.parseStructDeclaration()
+		return p.parseStructDefinition()
 	case token.SLASH_SLASH:
 		p.parseComment()
 		return nil
@@ -100,19 +103,6 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	p.nextToken()
 	stmt.Value = p.parseExpression(LOWEST)
 
-	return stmt
-}
-
-func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
-	stmt := &ast.ReturnStatement{Token: p.curToken}
-	p.nextToken()
-
-	stmt.ReturnValue = p.parseExpression(LOWEST)
-
-	if stmt.ReturnValue == nil {
-		p.errors = append(p.errors, "expected expression after 'return'")
-		return nil
-	}
 	return stmt
 }
 
@@ -284,101 +274,6 @@ func (p *Parser) parseComment() {
 		// Advance past the closing token
 		p.nextToken()
 	}
-}
-
-func (p *Parser) parseStructDeclaration() *ast.StructDeclaration {
-	structDecl := &ast.StructDeclaration{
-		Token: p.curToken,
-	}
-
-	if !p.expectPeek(token.IDENTIFIER) {
-		return nil
-	}
-	p.nextToken()
-	structDecl.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-
-	if !p.expectPeek(token.LBRACE) {
-		return nil
-	}
-	p.nextToken()
-
-	structDecl.Fields = p.parseStructFields()
-	if !p.expectPeek(token.RBRACE) {
-		return nil
-	}
-	p.nextToken()
-
-	p.definedTypes[structDecl.Name.Value] = true
-
-	return structDecl
-}
-
-func (p *Parser) parseStructField() *ast.StructField {
-	if !p.expectPeek(token.IDENTIFIER) {
-		return nil
-	}
-	p.nextToken()
-	field := &ast.StructField{
-		Token: p.peekToken,
-		Name:  &ast.Identifier{Token: p.peekToken, Value: p.peekToken.Literal},
-		Type:  p.curToken.Type,
-	}
-	return field
-}
-
-func (p *Parser) parseStructFields() []*ast.StructField {
-	fields := []*ast.StructField{}
-
-	for !p.peekTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
-		field := p.parseStructField()
-		if field == nil {
-			return nil
-		}
-		fields = append(fields, field)
-		p.nextToken()
-	}
-
-	return fields
-}
-
-func (p *Parser) parseStructLiteral() ast.Expression {
-	structLit := &ast.StructLiteral{
-		Token:  p.curToken,
-		Fields: make(map[string]ast.Expression),
-	}
-
-	p.nextToken()
-	p.nextToken()
-
-	for !p.curTokenIs(token.RBRACE) {
-		fieldName := p.curToken.Literal
-		if !p.expectPeek(token.COLON) {
-			return nil
-		}
-		p.nextToken()
-		p.nextToken()
-
-		fieldValue := p.parseExpression(LOWEST)
-
-		structLit.Fields[fieldName] = fieldValue
-
-		if p.peekTokenIs(token.COMMA) {
-			p.nextToken()
-		}
-
-		if p.curTokenIs(token.RBRACE) {
-			break
-		}
-		p.nextToken()
-	}
-
-	if !p.expectCurrentTokenIs(token.RBRACE) {
-		return nil
-	}
-
-	p.nextToken()
-
-	return structLit
 }
 
 func (p *Parser) parseDeferStatement() *ast.DeferStatement {
