@@ -8,7 +8,7 @@ import (
 )
 
 func TestParseMultipleReturnTypes(t *testing.T) {
-	input := `pub (i8, string) myFunction(i32 x, bool y) { return (5, "hello") }`
+	input := `pub (i8, string) myFunction(i32 x, bool y) { return 5, "hello" }`
 	l := lexer.New(input)
 	p := New(l)
 

@@ -5,17 +5,6 @@ The goal is to build a simple language that compiles directly to WebAssembly.
 
 Also, I'm just kind of toying around with making a language.
 
-## Goals
-* Target WebAssembly Text format (WAT) as an intermediate representation.
-* Strict types.
-* Enums.
-* User-defined types.
-* Built-in tools for testing.
-* Easy-to-use build tools.
-* Module/package management.
-* Runtimes for different use cases.
-* Functions are private by default and can easily be exported with the `pub` keyword.
-
 The ideal syntax will look similar to below.
 ```rust
 // addTwo is an exported function that adds two ints together and returns the result.

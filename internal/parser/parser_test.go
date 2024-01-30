@@ -244,13 +244,12 @@ func TestParseGroupedExpression(t *testing.T) {
 }
 
 func TestParseIfStatement(t *testing.T) {
-	input := "if (x < y) { x }"
+	input := "if (x < y) { return x - y }"
 	lexer := lexer.New(input)
 	parser := New(lexer)
 
 	program := parser.ParseProgram()
 	checkParserErrors(t, parser)
-
 	if len(program.Statements) != 1 {
 		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
 	}
@@ -269,17 +268,9 @@ func TestParseIfStatement(t *testing.T) {
 		return
 	}
 
-	cons, ok := stmt.Consequence.Statements[0].(*ast.BlockStatement)
+	_, ok = stmt.Consequence.Statements[0].(*ast.ReturnStatement)
 	if !ok {
-		t.Fatalf("Statements[0] is not ast.ExpressionStatement. got=%T", stmt.Consequence.Statements[0])
-	}
-
-	if cons.Statements[0].(*ast.ExpressionStatement).Expression.(*ast.Identifier).Token.Literal != "x" {
-		t.Fatalf("cons.Statements[0] is not ast.ExpressionStatement. got=%T", cons.Statements[0])
-	}
-
-	if stmt.Alternative != nil {
-		t.Errorf("exp.Alternative was not nil. got=%+v", stmt.Alternative)
+		t.Fatalf("Statements[0] is not *ast.Return. got=%T", stmt.Consequence.Statements[0])
 	}
 }
 

@@ -59,11 +59,10 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 		return nil
 	}
 
-	body := p.parseBlockStatement()
-
-	if p.curTokenIs(token.RBRACE) {
+	if p.curTokenIs(token.RPAREN) {
 		p.nextToken()
 	}
+	body := p.parseBlockStatement()
 
 	stmt := &ast.FunctionStatement{
 		IsExported:  isExported,
@@ -132,6 +131,7 @@ func (p *Parser) parseFunctionCall(function ast.Expression) ast.Expression {
 		Token:        p.curToken,
 		Function:     function,
 	}
+	p.nextToken()
 	exp.Arguments = p.parseFunctionCallArguments()
 	p.nextToken()
 	return exp
@@ -140,15 +140,15 @@ func (p *Parser) parseFunctionCall(function ast.Expression) ast.Expression {
 func (p *Parser) parseFunctionCallArguments() []ast.Expression {
 	args := []ast.Expression{}
 
+	if p.curTokenIs(token.LPAREN) {
+		p.nextToken()
+	}
 	if p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
 		return args
 	}
 
-	p.nextToken()
-	p.nextToken()
 	args = append(args, p.parseExpression(LOWEST))
-
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		p.nextToken()
@@ -167,7 +167,6 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 		}
 
 		for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
-			println(p.curToken.Literal)
 			expr := p.parseExpression(LOWEST)
 			if expr == nil {
 				p.errors = append(p.errors, "expected expression in return statement")
@@ -178,9 +177,6 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 			if p.peekTokenIs(token.COMMA) {
 				p.nextToken()
-			}
-			if p.peekTokenIs(token.RBRACE) {
-				break
 			}
 			p.nextToken()
 		}

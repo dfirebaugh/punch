@@ -207,12 +207,12 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 		return nil
 	}
 
+	if p.curTokenIs(token.RPAREN) {
+		p.nextToken()
+	}
 	expression.Consequence = p.parseBlockStatement()
 
 	if p.peekTokenIs(token.ELSE) {
-		if p.curTokenIs(token.RBRACE) {
-			p.nextToken()
-		}
 		p.nextToken()
 
 		if !p.expectPeek(token.LBRACE) {
@@ -220,10 +220,8 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 		}
 
 		expression.Alternative = p.parseBlockStatement()
-		if p.curTokenIs(token.RBRACE) {
-			p.nextToken()
-		}
 	}
+
 	return expression
 }
 
@@ -240,6 +238,9 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		}
 		switch stmt.(type) {
 		case *ast.ReturnStatement:
+			if p.curTokenIs(token.RPAREN) {
+				p.nextToken()
+			}
 			return block
 		}
 		p.nextToken()

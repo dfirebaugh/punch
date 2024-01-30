@@ -130,15 +130,14 @@ func generateStringLiteral(str *ast.StringLiteral) string {
 
 func generateFunctionCall(call *ast.FunctionCall) string {
 	var out strings.Builder
-	out.WriteString(fmt.Sprintf("(call $%s ", call.FunctionName))
+	out.WriteString(fmt.Sprintf("\n\t\t(call $%s", call.FunctionName))
 	for _, arg := range call.Arguments {
-		out.WriteString(generateExpression(arg))
 		out.WriteString(" ")
+		out.WriteString(generateExpression(arg))
 	}
 	out.WriteString(")")
 	return out.String()
 }
-
 func generateInfixExpression(infix *ast.InfixExpression) string {
 	left := generateExpression(infix.Left)
 	right := generateExpression(infix.Right)
@@ -162,7 +161,6 @@ func generateInfixExpression(infix *ast.InfixExpression) string {
 	case token.NOT_EQ:
 		return fmt.Sprintf("(i32.ne %s %s)", left, right)
 	default:
-		println("\t\t operator:", operator)
 		return fmt.Sprintf(";; unhandled operator: %s\n", operator)
 	}
 }
@@ -196,16 +194,16 @@ func generateIfStatement(e *ast.IfStatement) string {
 	}
 	var out strings.Builder
 	out.WriteString("\t\t(if ")
-	out.WriteString(generateExpression(e.Condition)) // Generates the condition expression
-	out.WriteString(" (then ")
-	out.WriteString(generateBlockStatement(e.Consequence)) // Generates the consequent block
-	out.WriteString(" )")
+	out.WriteString(generateExpression(e.Condition))
+	out.WriteString("\n\t\t\t(then\n")
+	out.WriteString(generateBlockStatement(e.Consequence))
+	out.WriteString("\n\t\t\t)")
 	if e.Alternative != nil {
-		out.WriteString(" \t\t(else ")
-		out.WriteString(generateBlockStatement(e.Alternative)) // Generates the alternative block, if it exists
-		out.WriteString(" )")
+		out.WriteString("\n\t\t\t(else\n")
+		out.WriteString(generateBlockStatement(e.Alternative))
+		out.WriteString("\n\t\t\t)")
 	}
-	out.WriteString(")")
+	out.WriteString("\n\t\t)")
 	return out.String()
 }
 
@@ -223,7 +221,7 @@ func generateFunctionStatement(s *ast.FunctionStatement) string {
 	}
 
 	for _, param := range s.Parameters {
-		out.WriteString(fmt.Sprintf("(param $%s i32) ", param.Identifier.Value)) // Assuming i32 for simplicity.
+		out.WriteString(fmt.Sprintf("(param $%s i32) ", param.Identifier.Value))
 	}
 	out.WriteString(fmt.Sprintf("(result %s)\n", returnType))
 	out.WriteString(generateBlockStatement(s.Body))
@@ -235,7 +233,6 @@ func generateFunctionStatement(s *ast.FunctionStatement) string {
 func generateReturnStatement(s *ast.ReturnStatement) string {
 	if s == nil {
 		log.Println("Encountered nil *ast.ReturnStatement")
-		println("returned early from generateReturnStatement ")
 		return ""
 	}
 
