@@ -1,7 +1,0 @@
-pub i8 subTwo(x, y) {
-	return (x - y);
-}
-
-pub i8 subFour(a, b, c, d) {
-	return (a - b - c - d);
-}

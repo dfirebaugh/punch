@@ -12,8 +12,8 @@ const (
 	astDisabled  = false
 )
 
-func Compile(source string) (string, []byte, string) {
-	l := lexer.New(source)
+func Compile(filename string, source string) (string, []byte, string) {
+	l := lexer.New(filename, source)
 	p := parser.New(l)
 	program := p.ParseProgram()
 	var ast string

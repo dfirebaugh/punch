@@ -24,7 +24,7 @@ func main() {
 		panic(err)
 	}
 
-	wat, wasm, ast := compiler.Compile(string(fileContents))
+	wat, wasm, ast := compiler.Compile(filename, string(fileContents))
 	if outputFile == "" {
 		fmt.Println(wat)
 	} else {

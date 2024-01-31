@@ -20,7 +20,7 @@ func TestParseStructLiteral(t *testing.T) {
 		body: "hello, world!"
 	}
 	`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	program := p.ParseProgram()
 
@@ -41,7 +41,7 @@ func TestParseStructLiteralWithoutFieldNames(t *testing.T) {
 	}
 	message msg = message{ 5, 10, "hello, world!" }
 	`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	program := p.ParseProgram()
 
@@ -63,7 +63,7 @@ func TestParseStructDefinition(t *testing.T) {
 	}
 	`
 
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	program := p.ParseProgram()
 	checkParserErrors(t, p)

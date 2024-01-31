@@ -9,7 +9,7 @@ import (
 
 func TestParseMultipleReturnTypes(t *testing.T) {
 	input := `pub (i8, string) myFunction(i32 x, bool y) { return 5, "hello" }`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 
 	program := p.ParseProgram()
@@ -31,7 +31,7 @@ func TestParseMultipleReturnTypes(t *testing.T) {
 
 func TestParseFunctionWithControlFlow(t *testing.T) {
 	input := `pub i8 myFunction(i32 x, bool y) { if true { return 0; } return 5 }`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 
 	program := p.ParseProgram()

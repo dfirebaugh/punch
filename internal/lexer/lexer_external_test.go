@@ -26,7 +26,7 @@ func TestLexer(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		l := lexer.New(tt.input)
+		l := lexer.New("", tt.input)
 		tokens := l.Run()
 
 		for i, tok := range tokens {

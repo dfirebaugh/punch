@@ -13,10 +13,12 @@ type Lexer struct {
 	savedScanner scanner.Scanner
 }
 
-func New(source string) *Lexer {
+func New(filename string, source string) *Lexer {
 	var s scanner.Scanner
 
 	s.Init(strings.NewReader(source))
+
+	s.Filename = filename
 
 	lexer := &Lexer{
 		Collector: &Collector{},

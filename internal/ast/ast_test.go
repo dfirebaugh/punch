@@ -71,7 +71,7 @@ func TestInfixExpression(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		l := lexer.New(tt.input)
+		l := lexer.New("", tt.input)
 		p := parser.New(l)
 		program := p.ParseProgram()
 		checkParserErrors(t, p)

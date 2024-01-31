@@ -13,7 +13,7 @@ type testCollector struct{}
 func (testCollector) Collect(token token.Token) {}
 
 func TestEvaluateToken(t *testing.T) {
-	l := New(``)
+	l := New("", ``)
 
 	tokens := []struct {
 		ExpectedType    token.Type
@@ -95,7 +95,7 @@ func TestLexLetStatement(t *testing.T) {
 		{Type: token.SEMICOLON, Literal: ";", Position: scanner.Position{Line: 1, Column: 10, Offset: 9}},
 	}
 
-	l := New(input)
+	l := New("", input)
 	for i, expectedToken := range expectedTokens {
 		tok := l.NextToken()
 
@@ -108,7 +108,7 @@ func TestLexLetStatement(t *testing.T) {
 }
 func Test_evaluateType(t *testing.T) {
 	input := `= 42 3.14 "hello world" foo`
-	l := New(input)
+	l := New("", input)
 
 	expectedTokens := []token.Type{
 		token.ASSIGN,
@@ -182,7 +182,7 @@ func TestBooleanLiterals(t *testing.T) {
 		{Type: token.EOF},
 	}
 
-	l := New(source)
+	l := New("", source)
 	tokens := l.Run()
 
 	if !reflect.DeepEqual(tokens, expectedTokens) {
@@ -191,7 +191,7 @@ func TestBooleanLiterals(t *testing.T) {
 }
 
 func TestEvaluateKeyword(t *testing.T) {
-	l := New("")
+	l := New("", "")
 
 	tests := []struct {
 		input    string
@@ -234,7 +234,7 @@ func TestLexFunctionDeclaration(t *testing.T) {
 		{Type: token.RBRACE, Literal: "}"},
 	}
 
-	l := New(input)
+	l := New("", input)
 
 	for i, expected := range expectedTokens {
 		tok := l.NextToken()

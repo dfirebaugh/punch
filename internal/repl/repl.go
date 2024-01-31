@@ -65,7 +65,7 @@ func (repl *REPL) handleLine(line string) bool {
 		return false
 	default:
 		fmt.Fprintf(repl.out, "Command entered: %s\n", line)
-		l := lexer.New(line)
+		l := lexer.New("repl", line)
 		p := parser.New(l)
 		program := p.ParseProgram()
 

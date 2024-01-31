@@ -11,7 +11,7 @@ import (
 
 func TestParseIdentifier(t *testing.T) {
 	input := "foobar;"
-	lexer := lexer.New(input)
+	lexer := lexer.New("", input)
 	parser := New(lexer)
 
 	program := parser.ParseProgram()
@@ -44,7 +44,7 @@ func TestParseBoolean(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		lexer := lexer.New(tt.input)
+		lexer := lexer.New("", tt.input)
 		parser := New(lexer)
 
 		program := parser.ParseProgram()
@@ -70,7 +70,7 @@ func TestParseBoolean(t *testing.T) {
 
 func TestParseAssignment(t *testing.T) {
 	input := "i8 x = 5;"
-	lexer := lexer.New(input)
+	lexer := lexer.New("", input)
 	parser := New(lexer)
 
 	program := parser.ParseProgram()
@@ -93,7 +93,7 @@ func TestParseAssignment(t *testing.T) {
 
 func TestParseReturnStatement(t *testing.T) {
 	input := "return 5;"
-	lexer := lexer.New(input)
+	lexer := lexer.New("", input)
 	parser := New(lexer)
 
 	program := parser.ParseProgram()
@@ -123,7 +123,7 @@ func TestParseReturnStatement(t *testing.T) {
 
 func TestParsePrefixExpression(t *testing.T) {
 	input := "!5;"
-	lexer := lexer.New(input)
+	lexer := lexer.New("", input)
 	parser := New(lexer)
 
 	program := parser.ParseProgram()
@@ -174,7 +174,7 @@ func TestParseInfixExpression(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		lexer := lexer.New(tt.input)
+		lexer := lexer.New("", tt.input)
 		parser := New(lexer)
 
 		program := parser.ParseProgram()
@@ -210,7 +210,7 @@ func TestParseInfixExpression(t *testing.T) {
 
 func TestParseGroupedExpression(t *testing.T) {
 	input := "(5 + 6)"
-	lexer := lexer.New(input)
+	lexer := lexer.New("", input)
 	parser := New(lexer)
 
 	program := parser.ParseProgram()
@@ -245,7 +245,7 @@ func TestParseGroupedExpression(t *testing.T) {
 
 func TestParseIfStatement(t *testing.T) {
 	input := "if (x < y) { return x - y }"
-	lexer := lexer.New(input)
+	lexer := lexer.New("", input)
 	parser := New(lexer)
 
 	program := parser.ParseProgram()
@@ -291,7 +291,7 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 func TestParseFunctionStatement(t *testing.T) {
 	input := "i8 add(i8 x, i8 y) { return x + y; }"
 
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 
 	stmt := p.parseFunctionStatement()
@@ -333,7 +333,7 @@ func TestParseFunctionStatement(t *testing.T) {
 
 func TestParseFunctionParametersLexing(t *testing.T) {
 	input := "pub i8 addTwo(x i8, y string) {return x + y; }"
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 
 	expectedTokens := []token.Token{
@@ -368,7 +368,7 @@ func TestParseFunctionParametersLexing(t *testing.T) {
 func TestParseFunctionParameter(t *testing.T) {
 	input := "i8 x"
 
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 
 	param := p.parseFunctionParameter()
@@ -391,7 +391,7 @@ func TestParseFunctionParameter(t *testing.T) {
 
 func TestParseFunctionParameters(t *testing.T) {
 	input := "i8 addTwo(i8 x, string y) {return x + y;}"
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	p.nextToken()
 	p.nextToken()
@@ -429,7 +429,7 @@ func TestParseComment(t *testing.T) {
 	}`
 	expected := `i8 commentFn() { i8 x = 5; i8 y = 10; return (y + x); }`
 
-	l := lexer.New(input)
+	l := lexer.New("", input)
 
 	p := New(l)
 	stmt := p.parseFunctionStatement()
@@ -446,7 +446,7 @@ func TestParseComment(t *testing.T) {
 
 func TestParseTypeBasedVariableDeclaration(t *testing.T) {
 	input := `i32 myVar = 5;`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 
 	decl := p.parseTypeBasedVariableDeclaration()
@@ -479,7 +479,7 @@ func TestParseTypeBasedVariableDeclaration(t *testing.T) {
 
 func TestParseExpressionAssignment(t *testing.T) {
 	input := "i8 myVar = 5"
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	p.nextToken() // Initialize the parser to point to the first token.
 
@@ -512,7 +512,7 @@ func TestStringLiteralReturn(t *testing.T) {
 		return "hello, world!";
 	}`
 
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	p.ParseProgram()
 	for _, e := range p.Errors() {
@@ -526,7 +526,7 @@ func TestStructDeclaration(t *testing.T) {
 		i8 recipient
 		string body
 	}`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	program := p.ParseProgram()
 
@@ -547,7 +547,7 @@ i8 main() {
 	}
 	return 0
 }`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	program := p.ParseProgram()
 	println(program.JSONPretty())
@@ -579,7 +579,7 @@ func TestParseBlockStatement(t *testing.T) {
 			return x;
 	}`
 
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 	p.nextToken()
 
@@ -605,7 +605,7 @@ i8 add(i8 a, i8 b) {
 }
 add(2, 3);
 	`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 
 	program := p.ParseProgram()
@@ -644,7 +644,7 @@ bool isEq(i8 a, i8 b) {
 		return a == b;
 }
 	`
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := New(l)
 
 	program := p.ParseProgram()

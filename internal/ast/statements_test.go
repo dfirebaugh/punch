@@ -112,7 +112,7 @@ func TestIfStatement(t *testing.T) {
 }
 
 func parse(input string, t *testing.T) (*parser.Parser, *ast.Program) {
-	l := lexer.New(input)
+	l := lexer.New("", input)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
