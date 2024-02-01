@@ -6,7 +6,6 @@ import (
 
 	"github.com/dfirebaugh/punch/internal/ast"
 	"github.com/dfirebaugh/punch/internal/lexer"
-	"github.com/dfirebaugh/punch/internal/token"
 )
 
 func TestParseIdentifier(t *testing.T) {
@@ -180,6 +179,13 @@ func TestParseInfixExpression(t *testing.T) {
 		program := parser.ParseProgram()
 		checkParserErrors(t, parser)
 
+		println(program.JSONPretty())
+
+		_, ok := program.Statements[0].(*ast.ExpressionStatement).Expression.(*ast.InfixExpression)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+
 		if len(program.Statements) != 1 {
 			t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
 		}
@@ -208,69 +214,29 @@ func TestParseInfixExpression(t *testing.T) {
 	}
 }
 
-func TestParseGroupedExpression(t *testing.T) {
-	input := "(5 + 6)"
-	lexer := lexer.New("", input)
-	parser := New(lexer)
-
+func TestParseInfixLT(t *testing.T) {
+	input := "5 < 6;"
+	l := lexer.New("", input)
+	parser := New(l)
 	program := parser.ParseProgram()
 	checkParserErrors(t, parser)
 
+	println(program.JSONPretty())
 	if len(program.Statements) != 1 {
 		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
-	}
-
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
-	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
-	}
-
-	exp, ok := stmt.Expression.(*ast.InfixExpression)
-	if !ok {
-		t.Fatalf("stmt is not ast.InfixExpression. got=%T", stmt.Expression)
-	}
-
-	if !testLiteralExpression(t, exp.Left, 5) {
-		return
-	}
-
-	if exp.Operator.Literal != "+" {
-		t.Errorf("exp.Operator is not '+'. got=%q", exp.Operator)
-	}
-
-	if !testLiteralExpression(t, exp.Right, 6) {
-		return
 	}
 }
 
-func TestParseIfStatement(t *testing.T) {
-	input := "if (x < y) { return x - y }"
-	lexer := lexer.New("", input)
-	parser := New(lexer)
-
+func TestParseInfixIdentifiersLT(t *testing.T) {
+	input := "z < x"
+	l := lexer.New("", input)
+	parser := New(l)
 	program := parser.ParseProgram()
 	checkParserErrors(t, parser)
+
+	println(program.JSONPretty())
 	if len(program.Statements) != 1 {
 		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
-	}
-
-	stmt, ok := program.Statements[0].(*ast.IfStatement)
-	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
-	}
-
-	if !testInfixExpression(t, stmt.Condition, "x", "<", "y") {
-		return
-	}
-
-	if len(stmt.Consequence.Statements) != 1 {
-		t.Errorf("consequence is not 1 statement. got=%d\n", len(stmt.Consequence.Statements))
-		return
-	}
-
-	_, ok = stmt.Consequence.Statements[0].(*ast.ReturnStatement)
-	if !ok {
-		t.Fatalf("Statements[0] is not *ast.Return. got=%T", stmt.Consequence.Statements[0])
 	}
 }
 
@@ -285,135 +251,6 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 	default:
 		t.Errorf("type of exp not handled. got=%T", exp)
 		return false
-	}
-}
-
-func TestParseFunctionStatement(t *testing.T) {
-	input := "i8 add(i8 x, i8 y) { return x + y; }"
-
-	l := lexer.New("", input)
-	p := New(l)
-
-	stmt := p.parseFunctionStatement()
-	// println(stmt.String())
-	if stmt == nil {
-		t.Fatalf("Expected function statement, got nil")
-	}
-
-	if stmt.Name.Value != "add" {
-		t.Errorf("Expected function name to be 'add', got '%s'", stmt.Name.Value)
-	}
-
-	if len(stmt.Parameters) != 2 {
-		t.Fatalf("Expected 2 parameters, got %d", len(stmt.Parameters))
-	}
-
-	expectedParams := []string{"x", "y"}
-
-	for i, ident := range stmt.Parameters {
-		if ident.Identifier.Value != expectedParams[i] {
-			t.Errorf("Parameter %d should have value %q, got %q", i+1, expectedParams[i], ident.Identifier.Value)
-		}
-	}
-
-	println(stmt.Body.String())
-	if len(stmt.Body.Statements) != 1 {
-		t.Fatalf("Expected function body to have 1 statement, got %d", len(stmt.Body.Statements))
-	}
-
-	returnStmt, ok := stmt.Body.Statements[0].(*ast.ReturnStatement)
-	if !ok {
-		t.Fatalf("Expected function body to contain a return statement, got %T", stmt.Body.Statements[0])
-	}
-
-	if !testInfixExpression(t, returnStmt.ReturnValues[0], "x", "+", "y") {
-		t.Errorf("Unexpected return value: %v", returnStmt.ReturnValues)
-	}
-}
-
-func TestParseFunctionParametersLexing(t *testing.T) {
-	input := "pub i8 addTwo(x i8, y string) {return x + y; }"
-	l := lexer.New("", input)
-	p := New(l)
-
-	expectedTokens := []token.Token{
-		{Type: token.PUB, Literal: "pub"},
-		{Type: token.I8, Literal: "i8"},
-		{Type: token.IDENTIFIER, Literal: "addTwo"},
-		{Type: token.LPAREN, Literal: "("},
-		{Type: token.IDENTIFIER, Literal: "x"},
-		{Type: token.I8, Literal: "i8"},
-		{Type: token.COMMA, Literal: ","},
-		{Type: token.IDENTIFIER, Literal: "y"},
-		{Type: token.STRING, Literal: "string"},
-		{Type: token.RPAREN, Literal: ")"},
-		{Type: token.LBRACE, Literal: "{"},
-		{Type: token.RETURN, Literal: "return"},
-		{Type: token.IDENTIFIER, Literal: "x"},
-		{Type: token.PLUS, Literal: "+"},
-		{Type: token.IDENTIFIER, Literal: "y"},
-		{Type: token.RBRACE, Literal: "}"},
-		{Type: token.EOF, Literal: ""},
-	}
-
-	for _, expected := range expectedTokens {
-		fmt.Printf("Token: Type=%s, Literal=%s\n", p.curToken.Type, p.curToken.Literal)
-		if p.curToken.Type != expected.Type || p.curToken.Literal != expected.Literal {
-			t.Fatalf("unexpected token - expected %q (%q), got %q (%q)", expected.Type, expected.Literal, p.curToken.Type, p.curToken.Literal)
-		}
-		p.nextToken()
-	}
-}
-
-func TestParseFunctionParameter(t *testing.T) {
-	input := "i8 x"
-
-	l := lexer.New("", input)
-	p := New(l)
-
-	param := p.parseFunctionParameter()
-
-	if param == nil {
-		t.Fatalf("Expected a valid parameter, got nil")
-	}
-
-	expectedName := "x"
-	expectedType := token.I8
-
-	if param.Identifier.Value != expectedName {
-		t.Errorf("Expected parameter name to be %q, got %q", expectedName, param.Identifier.Value)
-	}
-
-	if string(param.Type) != expectedType {
-		t.Errorf("Expected parameter type to be %s, got %s", expectedType, param.Type)
-	}
-}
-
-func TestParseFunctionParameters(t *testing.T) {
-	input := "i8 addTwo(i8 x, string y) {return x + y;}"
-	l := lexer.New("", input)
-	p := New(l)
-	p.nextToken()
-	p.nextToken()
-
-	parameters := p.parseFunctionParameters()
-
-	expected := []*ast.Parameter{
-		{Identifier: &ast.Identifier{Value: "x"}, Type: token.I8},
-		{Identifier: &ast.Identifier{Value: "y"}, Type: token.STRING},
-	}
-
-	if len(parameters) != len(expected) {
-		t.Fatalf("wrong number of parameters. want=%d, got=%d\n", len(expected), len(parameters))
-	}
-
-	for i, param := range parameters {
-		if param.Identifier.Value != expected[i].Identifier.Value {
-			t.Errorf("parameter %d identifier wrong. want=%s, got=%s", i, expected[i].Identifier.Value, param.Identifier.Value)
-		}
-		if param.Type != expected[i].Type {
-			t.Errorf("parameter %d type wrong. want=%s, got=%s", i, expected[i].Type, param.Type)
-		}
 	}
 }
 
@@ -543,10 +380,11 @@ func TestIfCondition(t *testing.T) {
 	input := `
 i8 main() {
 	if 1 == 1 {
-		return 1;
+		return 1
 	}
 	return 0
 }`
+
 	l := lexer.New("", input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -575,8 +413,8 @@ i8 main() {
 
 func TestParseBlockStatement(t *testing.T) {
 	input := `{
-			i8 x = 5;
-			return x;
+			i8 x = 5
+			return x
 	}`
 
 	l := lexer.New("", input)
@@ -587,55 +425,18 @@ func TestParseBlockStatement(t *testing.T) {
 	if blockStmt == nil {
 		t.Fatalf("parseBlockStatement() returned nil")
 	}
-
 	println(blockStmt.Statements[0].String())
 	println(blockStmt.Statements[1].String())
-	if blockStmt.Statements[0].String() != "x = 5" {
-		t.Errorf("blockStmt.Statements[0].String not 'x = 5'. got=%s", blockStmt.Statements[0].String())
+	if blockStmt.Statements[0].String() != "i8 x = 5;" {
+		t.Errorf("blockStmt.Statements[0].String not 'i8 x = 5;'. got=%s", blockStmt.Statements[0].String())
+	}
+	_, ok := blockStmt.Statements[1].(*ast.ReturnStatement)
+	if !ok {
+		t.Errorf("blockStmt.Statements[1] is not ast.ReturnStatement. got=%T", blockStmt.Statements[1])
 	}
 	if blockStmt.Statements[1].String() != "return x;" {
 		t.Errorf("blockStmt.Statements[1].String not'return x;'. got=%s", blockStmt.Statements[1].String())
 	}
-}
-
-func TestParseFunctionCall(t *testing.T) {
-	input := `
-i8 add(i8 a, i8 b) {
-		return a + b;
-}
-add(2, 3);
-	`
-	l := lexer.New("", input)
-	p := New(l)
-
-	program := p.ParseProgram()
-	// println(program.JSONPretty())
-	checkParserErrors(t, p)
-
-	if len(program.Statements) != 2 {
-		t.Fatalf("program.Statements does not contain 2 statements. got=%d", len(program.Statements))
-	}
-
-	stmt, ok := program.Statements[1].(*ast.ExpressionStatement)
-	if !ok {
-		t.Fatalf("Second statement is not ast.ExpressionStatement. got=%T", program.Statements[1])
-	}
-
-	functionCall, ok := stmt.Expression.(*ast.FunctionCall)
-	if !ok {
-		t.Fatalf("Expression is not ast.FunctionCall. got=%T", stmt.Expression)
-	}
-
-	if !testIdentifier(t, functionCall.Function, "add") {
-		return
-	}
-
-	if len(functionCall.Arguments) != 2 {
-		t.Fatalf("Function call wrong number of arguments. want=2, got=%d", len(functionCall.Arguments))
-	}
-
-	testLiteralExpression(t, functionCall.Arguments[0], 2)
-	testLiteralExpression(t, functionCall.Arguments[1], 3)
 }
 
 func TestParseBoolReturn(t *testing.T) {

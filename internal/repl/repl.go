@@ -5,9 +5,9 @@ import (
 	"io"
 	"strings"
 
+	"github.com/dfirebaugh/punch/internal/emitters/wat"
 	"github.com/dfirebaugh/punch/internal/lexer"
 	"github.com/dfirebaugh/punch/internal/parser"
-	"github.com/dfirebaugh/punch/internal/wat"
 
 	"github.com/chzyer/readline"
 )

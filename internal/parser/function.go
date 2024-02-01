@@ -21,7 +21,7 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 
 		for !p.curTokenIs(token.RPAREN) {
 			if !p.isTypeToken(p.curToken) {
-				p.errors = append(p.errors, fmt.Sprintf("expected return type, got %s instead", p.curToken.Type))
+				p.error(fmt.Sprintf("expected return type, got %s instead", p.curToken.Type))
 				return nil
 			}
 
@@ -35,7 +35,7 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 		}
 
 		if !p.expectCurrentTokenIs(token.RPAREN) {
-			p.errors = append(p.errors, "expected ')' after return types")
+			p.error("expected ')' after return types")
 			return nil
 		}
 		p.nextToken()
@@ -44,7 +44,7 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 		returnTypes = append(returnTypes, returnType)
 		p.nextToken()
 	} else {
-		p.errors = append(p.errors, "expected return type or '(' for multiple return types")
+		p.error("expected return type or '(' for multiple return types")
 		return nil
 	}
 
@@ -89,7 +89,6 @@ func (p *Parser) parseFunctionParameters() []*ast.Parameter {
 		if param != nil {
 			parameters = append(parameters, param)
 		}
-
 		p.nextToken()
 
 		if p.curTokenIs(token.COMMA) {
@@ -106,7 +105,7 @@ func (p *Parser) parseFunctionParameters() []*ast.Parameter {
 
 func (p *Parser) parseFunctionParameter() *ast.Parameter {
 	if !p.isTypeToken(p.curToken) {
-		p.errors = append(p.errors, fmt.Sprintf("expected type token, got %s instead", p.curToken.Type))
+		p.error(fmt.Sprintf("expected type token, got %s instead", p.curToken.Type))
 		return nil
 	}
 	paramType := p.curToken
@@ -114,18 +113,26 @@ func (p *Parser) parseFunctionParameter() *ast.Parameter {
 	p.nextToken()
 
 	if !p.curTokenIs(token.IDENTIFIER) {
-		p.errors = append(p.errors, fmt.Sprintf("expected identifier token, got %s instead", p.curToken.Type))
+		p.error(fmt.Sprintf("expected identifier token, got %s instead", p.curToken.Type))
 		return nil
 	}
 	paramName := p.curToken.Literal
 
 	return &ast.Parameter{
-		Identifier: &ast.Identifier{Token: paramType, Value: paramName},
-		Type:       paramType.Type,
+		Identifier: &ast.Identifier{
+			Token: token.Token{
+				Type:     token.IDENTIFIER,
+				Literal:  paramName,
+				Position: p.curToken.Position,
+			},
+			Value: paramName,
+		},
+		Type: paramType.Type,
 	}
 }
 
 func (p *Parser) parseFunctionCall(function ast.Expression) ast.Expression {
+	p.trace("parsing function call", function.TokenLiteral(), p.peekToken.Literal)
 	exp := &ast.FunctionCall{
 		FunctionName: function.TokenLiteral(),
 		Token:        p.curToken,
@@ -133,33 +140,50 @@ func (p *Parser) parseFunctionCall(function ast.Expression) ast.Expression {
 	}
 	p.nextToken()
 	exp.Arguments = p.parseFunctionCallArguments()
-	p.nextToken()
+
+	if len(exp.Arguments) == 1 && p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+	}
+	if !p.expectCurrentTokenIs(token.RPAREN) {
+		p.error("expected ')' after function call arguments")
+		return nil
+	}
+	p.trace("parsed function call after args", p.curToken.Literal, p.peekToken.Literal)
 	return exp
 }
 
 func (p *Parser) parseFunctionCallArguments() []ast.Expression {
 	args := []ast.Expression{}
-
+	p.trace("parsing func call args beginning", p.curToken.Literal, p.peekToken.Literal)
 	if p.curTokenIs(token.LPAREN) {
 		p.nextToken()
-	}
-	if p.peekTokenIs(token.RPAREN) {
-		p.nextToken()
-		return args
+		p.trace("consume LPAREN", p.curToken.Literal, p.peekToken.Literal)
 	}
 
 	args = append(args, p.parseExpression(LOWEST))
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
+	p.trace("after parsing first arg", args[0].String(), p.curToken.Literal, p.peekToken.Literal)
+
+	if p.curTokenIs(token.RPAREN) {
+		return args
 	}
+
+	for p.curTokenIs(token.COMMA) && !p.curTokenIs(token.RPAREN) {
+		p.nextToken()
+		p.trace("func args 1", p.curToken.Literal, p.peekToken.Literal)
+		args = append(args, p.parseExpression(LOWEST))
+		p.trace("func args 2", p.curToken.Literal, p.peekToken.Literal)
+	}
+	p.trace("after parsing func args", p.curToken.Literal, p.peekToken.Literal)
 	return args
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+	p.trace("parsing return statement", p.curToken.Literal)
 	stmt := &ast.ReturnStatement{Token: p.curToken}
-	p.nextToken()
+	if p.curTokenIs(token.RETURN) {
+		p.nextToken() // consume return keyword
+	}
+	p.trace("after return keyword", p.curToken.Literal, string(p.curToken.Type))
 
 	if p.peekTokenAfter(token.COMMA) || p.peekTokenIs(token.COMMA) {
 		if p.peekTokenAfter(token.COMMA) && p.curTokenIs(token.LPAREN) {
@@ -169,7 +193,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 		for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
 			expr := p.parseExpression(LOWEST)
 			if expr == nil {
-				p.errors = append(p.errors, "expected expression in return statement")
+				p.error("expected expression in return statement")
 				return nil
 			}
 
@@ -181,17 +205,20 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 			p.nextToken()
 		}
 
-		if p.curTokenIs(token.RPAREN) {
-			p.nextToken()
-		}
 	} else {
+		p.trace("parse return value", p.curToken.Literal, p.peekToken.Literal)
 		expr := p.parseExpression(LOWEST)
+		p.trace("after parse return value", expr.String())
+		p.trace("return expression", expr.String())
 		if expr != nil {
 			stmt.ReturnValues = append(stmt.ReturnValues, expr)
 		} else {
-			p.errors = append(p.errors, "expected expression after 'return'")
+			p.error("expected expression after 'return'")
 			return nil
 		}
+	}
+	if p.peekTokenIs(token.RBRACE) {
+		p.nextToken()
 	}
 
 	return stmt

@@ -19,12 +19,14 @@ func (p *Parser) parseStructDefinition() *ast.StructDefinition {
 	structDef.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 	if !p.expectPeek(token.LBRACE) {
+		p.error("expected '{' after struct name")
 		return nil
 	}
 	p.nextToken()
 
 	structDef.Fields = p.parseStructFields()
 	if !p.expectPeek(token.RBRACE) {
+		p.error("expected '}' after struct fields")
 		return nil
 	}
 	p.nextToken()
@@ -82,6 +84,7 @@ func (p *Parser) parseStructLiteral() ast.Expression {
 	p.nextToken()
 
 	if !p.expectCurrentTokenIs(token.LBRACE) {
+		p.error("expected '{' after struct name")
 		return nil
 	}
 	p.nextToken()

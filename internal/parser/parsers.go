@@ -24,14 +24,22 @@ func (p *Parser) ParseProgram() *ast.Program {
 }
 
 func (p *Parser) parseStatement() ast.Statement {
-	if p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.LPAREN) {
+	p.trace("parsing statement", p.curToken.Literal, p.peekToken.Literal)
+	if p.curTokenIs(token.PUB) && p.isTypeToken(p.peekToken) && p.peekTokenAfter(token.IDENTIFIER) || p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.LPAREN) {
 		return p.parseFunctionStatement()
 	}
 	if p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.ASSIGN) {
-		return p.parseTypeBasedVariableDeclaration()
+		p.trace("parsing variable declaration", p.curToken.Literal, p.peekToken.Literal)
+		s := p.parseTypeBasedVariableDeclaration()
+		p.trace("after parsing variable declaration", p.curToken.Literal, p.peekToken.Literal)
+		return s
 	}
 
 	switch p.curToken.Type {
+	case token.TRUE:
+		return p.parseExpressionStatement()
+	case token.FALSE:
+		return p.parseExpressionStatement()
 	case token.STRUCT:
 		return p.parseStructDefinition()
 	case token.SLASH_SLASH:
@@ -46,15 +54,19 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseFunctionStatement()
 	case token.DEFER:
 		return p.parseDeferStatement()
-	case token.LET:
-		return p.parseLetStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
 	case token.IF:
 		return p.parseIfStatement()
 	case token.LBRACE:
 		return p.parseBlockStatement()
+	case token.IDENTIFIER:
+		if p.peekTokenIs(token.ASSIGN) {
+			return p.parseVariableDeclarationOrAssignment()
+		}
+		return p.parseExpressionStatement()
 	default:
+		p.trace("parsing statement - default - expression statement", p.curToken.Literal, p.peekToken.Literal)
 		if p.curTokenIs(token.RBRACE) && p.peekTokenIs(token.EOF) {
 			return nil
 		}
@@ -85,37 +97,57 @@ func (p *Parser) isTypeToken(t token.Token) bool {
 	return exists
 }
 
-func (p *Parser) parseLetStatement() *ast.LetStatement {
-	stmt := &ast.LetStatement{Token: p.curToken}
-
-	// Expect and parse the identifier (variable name)
-	if !p.expectPeek(token.IDENTIFIER) {
+func (p *Parser) parseVariableDeclarationOrAssignment() ast.Statement {
+	typeToken := p.curToken
+	p.trace("parsing variable declaration or assignment", typeToken.Literal, p.curToken.Literal, string(p.curToken.Type))
+	if !p.curTokenIs(token.IDENTIFIER) {
+		p.error("expected identifier after type")
 		return nil
 	}
-	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	name := p.parseIdentifier()
 
-	// Expect and consume the '=' token
-	if !p.expectPeek(token.ASSIGN) {
-		return nil
-	}
-
-	// Move past '=' and parse the expression/value
 	p.nextToken()
-	stmt.Value = p.parseExpression(LOWEST)
+	if !p.curTokenIs(token.ASSIGN) {
+		p.error("expected '=' after identifier")
+		return nil
+	}
 
-	return stmt
+	p.nextToken()
+	value := p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.SEMICOLON) {
+		p.error("expected ';' after expression")
+		return nil
+	}
+
+	return &ast.VariableDeclaration{
+		Type:  typeToken,
+		Name:  name.(*ast.Identifier),
+		Value: value,
+	}
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 	stmt.Expression = p.parseExpression(LOWEST)
+	if stmt.Expression != nil {
+		p.trace("after parsing expression statement", stmt.Expression.String())
+	}
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
 	return stmt
 }
 
 func (p *Parser) parseNumberType(typeToken token.Type) ast.Expression {
-	return &ast.NumberType{
+	d, err := strconv.Atoi(p.curToken.Literal)
+	if err != nil {
+		panic(err)
+	}
+	return &ast.IntegerLiteral{
 		Token: p.curToken,
-		Type:  typeToken,
+		Value: int64(d),
 	}
 }
 
@@ -162,9 +194,7 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 
 	p.nextToken()
 
-	right := p.parseExpression(PREFIX)
-
-	expression.Right = right
+	expression.Right = p.parseExpression(PREFIX)
 
 	return expression
 }
@@ -179,71 +209,71 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	precedence := p.curPrecedence()
 	p.nextToken()
 	expression.Right = p.parseExpression(precedence)
-
 	return expression
-}
-
-func (p *Parser) parseGroupedExpression() ast.Expression {
-	p.nextToken()
-
-	exp := p.parseExpression(LOWEST)
-
-	if !p.expectPeek(token.RPAREN) {
-		fmt.Println("Failed to find closing parenthesis")
-		return nil
-	}
-	p.nextToken()
-
-	return exp
 }
 
 func (p *Parser) parseIfStatement() *ast.IfStatement {
-	expression := &ast.IfStatement{Token: p.curToken}
+	p.enterControlStatement()
+	defer p.exitControlStatement()
 
-	p.nextToken()
-	expression.Condition = p.parseExpression(LOWEST)
+	stmt := &ast.IfStatement{Token: p.curToken}
 
-	if !p.expectPeek(token.LBRACE) {
-		return nil
-	}
-
+	p.nextToken() // consume if
+	stmt.Condition = p.parseExpression(LOWEST)
 	if p.curTokenIs(token.RPAREN) {
 		p.nextToken()
 	}
-	expression.Consequence = p.parseBlockStatement()
 
+	if !p.expectCurrentTokenIs(token.LBRACE) {
+		p.error("expecting current token is a '{'", p.curToken.Literal, p.peekToken.Literal)
+		return nil
+	}
+	stmt.Consequence = p.parseBlockStatement()
+	p.trace("parsing if statement", p.curToken.Literal, p.peekToken.Literal)
 	if p.peekTokenIs(token.ELSE) {
-		p.nextToken()
+		p.nextToken() // consume else
 
-		if !p.expectPeek(token.LBRACE) {
+		if !p.expectCurrentTokenIs(token.LBRACE) {
 			return nil
 		}
 
-		expression.Alternative = p.parseBlockStatement()
+		stmt.Alternative = p.parseBlockStatement()
 	}
 
-	return expression
+	if p.curTokenIs(token.RBRACE) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) isInControlStatement() bool {
+	return p.controlDepth > 0
+}
+
+func (p *Parser) enterControlStatement() {
+	p.controlDepth++
+}
+
+func (p *Parser) exitControlStatement() {
+	p.controlDepth--
 }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	block := &ast.BlockStatement{Token: p.curToken}
 	block.Statements = []ast.Statement{}
 
-	p.nextToken()
-
+	if p.curTokenIs(token.LBRACE) {
+		p.nextToken() // consume LBRACE
+	}
 	for !p.curTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
 		stmt := p.parseStatement()
+		if p.curTokenIs(token.RPAREN) {
+			p.nextToken()
+		}
 		if stmt != nil {
 			block.Statements = append(block.Statements, stmt)
 		}
-		switch stmt.(type) {
-		case *ast.ReturnStatement:
-			if p.curTokenIs(token.RPAREN) {
-				p.nextToken()
-			}
-			return block
-		}
-		p.nextToken()
 	}
 
 	return block
@@ -289,6 +319,7 @@ func (p *Parser) parseDeferStatement() *ast.DeferStatement {
 }
 
 func (p *Parser) parseAssignmentExpression(left ast.Expression) ast.Expression {
+	p.trace("parse assignment", p.curToken.Literal, p.peekToken.Literal)
 	if _, ok := left.(*ast.Identifier); !ok {
 		p.errors = append(p.errors, "left-hand side of assignment must be an identifier")
 		return nil

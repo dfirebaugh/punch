@@ -1,6 +1,8 @@
 package token
 
-import "text/scanner"
+import (
+	"text/scanner"
+)
 
 type Type string
 

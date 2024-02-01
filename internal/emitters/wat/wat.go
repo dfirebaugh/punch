@@ -43,10 +43,17 @@ func GenerateWAT(node ast.Node, withMemoryManagement bool) string {
 	return ""
 }
 
+func generateImports() string {
+	return `
+(import "imports" "println" (func $println (param i32)))
+`
+}
+
 func generateMemoryManagementFunctions() string {
 	return `
 ;; Declare a memory section with 1 page (64KB)
 (memory 1)
+(export "memory" (memory 0))
 
 ;; Global variable to track the current memory allocation position
 (global $mem_alloc_ptr (mut i32) (i32.const 0))
@@ -106,6 +113,7 @@ func generateStatements(stmts []ast.Statement, withMemoryManagement bool) string
 	var out strings.Builder
 	out.WriteString("(module\n")
 
+	out.WriteString(generateImports())
 	if withMemoryManagement {
 		out.WriteString(generateMemoryManagementFunctions())
 	}
@@ -122,22 +130,48 @@ func generateStatements(stmts []ast.Statement, withMemoryManagement bool) string
 
 func generateStringLiteral(str *ast.StringLiteral) string {
 	length := len(str.Value) + 1 // Including null terminator
-	return fmt.Sprintf(
-		`(call $%s (i32.const %d)) ;; allocate memory for string\n`+
-			`(data (i32.const 0) "%s\u0000") ;; store string with null terminator\n`,
-		MemoryAllocateFunc, length, str.Value)
+	var out strings.Builder
+
+	// Allocate memory for the string
+	out.WriteString(fmt.Sprintf("(call $%s (i32.const %d))\n", MemoryAllocateFunc, length))
+
+	// Store the string in memory
+	for i, char := range str.Value {
+		out.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get 0) (i32.const %d)) ;; '%c'\n", i, char, char))
+	}
+
+	// Store the null terminator
+	out.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get 0) (i32.const 0))\n", length-1))
+
+	// Return the memory address of the string
+	out.WriteString("(local.get 0)\n")
+
+	return out.String()
 }
 
 func generateFunctionCall(call *ast.FunctionCall) string {
 	var out strings.Builder
-	out.WriteString(fmt.Sprintf("\n\t\t(call $%s", call.FunctionName))
-	for _, arg := range call.Arguments {
-		out.WriteString(" ")
-		out.WriteString(generateExpression(arg))
+
+	if call.FunctionName == "println" && len(call.Arguments) > 0 {
+		// Assume the first argument is a string to print
+		strArg, ok := call.Arguments[0].(*ast.StringLiteral)
+		if !ok {
+			log.Fatal("println expects a string argument")
+		}
+		out.WriteString(generateStringLiteral(strArg))
+		out.WriteString("(call $println (local.get 0))\n")
+	} else {
+		out.WriteString(fmt.Sprintf("(call $%s ", call.FunctionName))
+		for _, arg := range call.Arguments {
+			out.WriteString(" ")
+			out.WriteString(generateExpression(arg))
+		}
+		out.WriteString(")\n")
 	}
-	out.WriteString(")")
+
 	return out.String()
 }
+
 func generateInfixExpression(infix *ast.InfixExpression) string {
 	left := generateExpression(infix.Left)
 	right := generateExpression(infix.Right)
@@ -262,19 +296,16 @@ func generateStatement(stmt ast.Statement) string {
 
 	switch s := stmt.(type) {
 	case *ast.LetStatement:
-		// check if value is a string literal
 		if str, ok := s.Value.(*ast.StringLiteral); ok {
-			// declare string constant in data section
 			return fmt.Sprintf(
 				`(data (i32.const 0) "%s")`+"\n"+
 					"(local $%s i32)\n"+
-					`(i32.const 0)`+"\n"+ // load address of string
-					`(i32.load)`+"\n"+ // load pointer to string value
+					`(i32.const 0)`+"\n"+
+					`(i32.load)`+"\n"+
 					`(local.set $%s)`+"\n",
 				str.Value, s.Name.Value, s.Name.Value,
 			)
 		}
-		// handle other value types as before
 		return fmt.Sprintf(
 			"(local $%s i32)\n"+
 				"%s\n"+
