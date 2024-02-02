@@ -1,39 +1,143 @@
-> work in progress
-
 # PUNCH 🥊
-The goal is to build a simple language that compiles directly to WebAssembly.
+`punch` is a hobby programming language.  At the moment, `punch` targets wasm.
+> I'm mainly working on this as a learning experience.
 
-Also, I'm just kind of toying around with making a language.
+### Build
+Compile a punch program to wasm:
+```bash
+# build the wasm file
+punch -o ./examples/adder/adder ./examples/adder/adder.p
+# execute the wasm file
+cd ./examples/adder
+node adder.js
+```
 
-The ideal syntax will look similar to below.
+> a `.wat` file and `.ast` file will also be output for debug purposes
+
+#### Functions
+
 ```rust
-// addTwo is an exported function that adds two ints together and returns the result.
-pub i8 addTwo(i8 a, i8 b) {
-    return a + b;
+// function declaration
+bool is_best(i8 a, i8 b)
+
+// simple function
+i8 add(i8 a, i8 b) {
+    return a + b
+}
+
+// exported function
+pub i8 add_two(i8 a, i8 b) {
+    return a + b
+}
+
+// multiple return types
+(i8, bool) add_eq(i8 a, i8 b) {
+    return a + b, a == b
+}
+
+// no return
+main() {
+    println("hello world")
 }
 ```
 
-which should output something like the following:
-```wat
-(module
-    (func $addTwo (export "addTwo")(param $x i32)(param $y i32)(result i32)
-        (return (i32.add (local.get $x) (local.get $y)))
-    )
+#### Conditions
+
+```rust
+if a && b {
+    println("abc")
+}
+```
+
+#### Assignment
+
+```rust
+i8 a     = 42
+i16 b    = 42
+i32 c    = 42
+i64 d    = 42
+u8 e     = 42
+u16 f    = 42
+u32 g    = 42
+u64 h    = 42
+f32 k    = 42.0
+f64 l    = 42.0
+bool m   = true
+str n    = "hello"
+```
+
+#### Structs
+
+```rust
+struct message {
+    i8  sender
+    i8 	recipient
+    str body
+}
+message msg = {
+    sender: 5,
+    recipient: 10,
+    body: "hello"
+}
+
+println(msg.sender, msg.recipient, msg.body)
+```
+
+#### Loops
+
+```rust
+// traditional for loop
+for i := 0; i < 10 ; i = i + 1 {
+
+}
+
+// loop while true
+for true {
+
+}
+
+// loop forever
+for {
+
+}
+```
+
+#### Simple Program
+
+```rust
+pkg main
+
+import (
+    "fmt"
 )
+
+main() {
+    fmt.Println("hello, world!")
+}
 ```
 
-### Example
+#### Status
+> work in progress
 
-Compile a file to wasm:
-
-```bash
-punch -o ./examples/adder/adder ./examples/adder/adder.pn
-```
-
-This will output a `adder.wat` file and an `adder.wasm` file.
-
-To execute the `.wasm` file, you can run `go run ./examples/adder/`.
-`./examples/adder/main.go` uses wasmtime to load in the wasm file and execute functions that it exports.
+| Feature | ast | wasm |
+| - | - | - |
+| function declaration | ✅ | ✅ |
+| function calls | ✅ | ✅ |
+| function multiple returns | ✅ | ❌ |
+| if/else | ✅ | ✅ |
+| strings | ✅ | ✅ |
+| integers | ✅ | ✅ |
+| floats | ✅ | ❌ |
+| structs | ✅ | ✅ |
+| struct access | ❌ | ❌ |
+| loops | ❌ | ❌ |
+| lists | ❌ | ❌ |
+| maps | ❌ | ❌ |
+| pointers | ❌ | ❌ |
+| enums | ❌ | ❌ |
+| modules | ❌ | ❌ |
+| type inference | ❌ | ❌ |
+| interfaces | ❌ | ❌ |
 
 ## Reference
 - [WebAssembly Text Format (WAT)](https://webassembly.github.io/spec/core/text/index.html)
