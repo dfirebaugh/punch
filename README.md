@@ -85,7 +85,7 @@ println(msg.sender, msg.recipient, msg.body)
 
 #### Loops
 
-```rust
+```go
 // traditional for loop
 for i := 0; i < 10 ; i = i + 1 {
 
