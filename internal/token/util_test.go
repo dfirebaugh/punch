@@ -217,8 +217,6 @@ func TestIsNumber(t *testing.T) {
 		{Token{Type: I8, Literal: "127"}, true},
 		{Token{Type: I16, Literal: "32767"}, true},
 		{Token{Type: I32, Literal: "2147483647"}, true},
-		{Token{Type: F8, Literal: "1.23"}, true},
-		{Token{Type: F16, Literal: "1.23"}, true},
 		{Token{Type: F32, Literal: "1.23"}, true},
 		{Token{Type: PLUS}, false},
 		{Token{Type: MINUS}, false},

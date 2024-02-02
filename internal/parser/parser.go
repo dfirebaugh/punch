@@ -84,9 +84,10 @@ func (p *Parser) registerParseRules() {
 		token.AND:        {infixFn: p.parseInfixExpression},
 		token.OR:         {infixFn: p.parseInfixExpression},
 	}
-	numberTypes := []token.Type{token.U8, token.U16, token.U32, token.U64,
+	numberTypes := []token.Type{
+		token.U8, token.U16, token.U32, token.U64,
 		token.I8, token.I16, token.I32, token.I64,
-		token.F8, token.F16, token.F32, token.F64}
+		token.F32, token.F64}
 	for _, numberType := range numberTypes {
 		p.registerPrefix(numberType, func() ast.Expression {
 			return p.parseNumberType(numberType)
@@ -165,7 +166,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 			p.nextToken()
 			return p.parseInfixExpression(ident)
 		}
-		if p.peekToken.Type == token.ASSIGN {
+		if p.peekToken.Type == token.ASSIGN || p.peekToken.Type == token.INFER {
 			ident := p.parseIdentifier()
 			p.nextToken()
 			return p.parseAssignmentExpression(ident)

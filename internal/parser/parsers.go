@@ -35,6 +35,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		return s
 	}
 
+	if p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.INFER) {
+		return p.parseTypeBasedVariableDeclaration()
+	}
+
 	switch p.curToken.Type {
 	case token.TRUE:
 		return p.parseExpressionStatement()
@@ -86,8 +90,6 @@ func (p *Parser) isTypeToken(t token.Token) bool {
 		token.I16,
 		token.I32,
 		token.I64,
-		token.F8,
-		token.F16,
 		token.F32,
 		token.F64:
 		return true
@@ -320,6 +322,8 @@ func (p *Parser) parseDeferStatement() *ast.DeferStatement {
 
 func (p *Parser) parseAssignmentExpression(left ast.Expression) ast.Expression {
 	p.trace("parse assignment", p.curToken.Literal, p.peekToken.Literal)
+
+	println(p.curToken.Literal, p.curTokenIs(token.INFER))
 	if _, ok := left.(*ast.Identifier); !ok {
 		p.errors = append(p.errors, "left-hand side of assignment must be an identifier")
 		return nil
@@ -337,6 +341,21 @@ func (p *Parser) parseAssignmentExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseTypeBasedVariableDeclaration() ast.Statement {
+	if !p.isTypeToken(p.curToken) && p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.INFER) {
+		decl := &ast.VariableDeclaration{
+			Name:  &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
+			Value: nil,
+		}
+		p.nextToken() // consume identifier
+		p.nextToken() // consume INFER
+		decl.Value = p.parseExpression(LOWEST)
+		t := p.inferType(decl.Value)
+		decl.Type = token.Token{
+			Type:    t,
+			Literal: string(t),
+		}
+		return decl
+	}
 	varType := p.curToken
 	if !p.expectPeek(token.IDENTIFIER) {
 		return nil
@@ -358,4 +377,16 @@ func (p *Parser) parseTypeBasedVariableDeclaration() ast.Statement {
 	varDecl.Value = p.parseExpression(LOWEST)
 
 	return varDecl
+}
+func (p *Parser) inferType(value ast.Expression) token.Type {
+	switch value.(type) {
+	case *ast.IntegerLiteral:
+		return token.I32
+	case *ast.StringLiteral:
+		return token.STRING
+	case *ast.BooleanLiteral:
+		return token.BOOL
+	default:
+		return token.ILLEGAL
+	}
 }

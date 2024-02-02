@@ -30,6 +30,7 @@ const (
 
 	// Operators
 	ASSIGN          = "="
+	INFER           = ":="
 	PLUS            = "+"
 	PLUS_EQUALS     = "+="
 	MINUS           = "-"
@@ -100,8 +101,6 @@ const (
 	I16 = "i16"
 	I32 = "i32"
 	I64 = "i64"
-	F8  = "f8"
-	F16 = "f16"
 	F32 = "f32"
 	F64 = "f64"
 )

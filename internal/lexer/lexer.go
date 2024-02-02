@@ -93,6 +93,12 @@ func (l Lexer) isSpecialCharacter(literal string) bool {
 
 func (l *Lexer) evaluateMultiCharOperators(literal string) token.Type {
 	switch literal {
+	case token.COLON:
+		if l.scanner.Peek() == rune('=') {
+			l.scanner.Scan()
+			return token.INFER
+		}
+		return token.COLON
 	case token.ASSIGN:
 		if l.scanner.Peek() == rune('=') {
 			l.scanner.Scan()
@@ -170,6 +176,8 @@ func (l *Lexer) evaluateMultiCharOperators(literal string) token.Type {
 
 func (l Lexer) evaluateSpecialCharacter(literal string) token.Type {
 	switch literal {
+	case token.INFER:
+		return token.INFER
 	case token.PLUS:
 		return token.PLUS
 	case token.MINUS:
@@ -225,10 +233,6 @@ func (l *Lexer) evaluateKeyword(literal string) token.Type {
 		return token.I32
 	case token.I64:
 		return token.I64
-	case token.F8:
-		return token.F8
-	case token.F16:
-		return token.F16
 	case token.F32:
 		return token.F32
 	case token.F64:

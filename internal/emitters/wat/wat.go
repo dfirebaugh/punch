@@ -247,19 +247,62 @@ func generateFunctionStatement(s *ast.FunctionStatement) string {
 		log.Println("Encountered nil *ast.FunctionStatement")
 		return ""
 	}
-	returnType := mapTypeToWAT(s.ReturnTypes[0].TokenLiteral())
 
-	out.WriteString(fmt.Sprintf("\t(func $%s ", s.Name.Value))
+	// Start the function definition
+	out.WriteString(fmt.Sprintf("(func $%s ", s.Name.Value))
+
+	// Check if the function is exported
 	if s.IsExported {
 		out.WriteString(fmt.Sprintf("(export \"%s\") ", s.Name.Value))
 	}
 
+	// Parameters
 	for _, param := range s.Parameters {
-		out.WriteString(fmt.Sprintf("(param $%s i32) ", param.Identifier.Value))
+		out.WriteString(fmt.Sprintf("(param $%s %s) ", param.Identifier.Value, mapTypeToWAT(string(param.Type))))
 	}
-	out.WriteString(fmt.Sprintf("(result %s)\n", returnType))
-	out.WriteString(generateBlockStatement(s.Body))
+
+	// Return type
+	if len(s.ReturnTypes) > 0 {
+		returnType := mapTypeToWAT(s.ReturnTypes[0].TokenLiteral())
+		out.WriteString(fmt.Sprintf("(result %s) \n", returnType))
+	}
+
+	// Local variables
+	var locals []string
+	for _, stmt := range s.Body.Statements {
+		if decl, ok := stmt.(*ast.VariableDeclaration); ok {
+			locals = append(locals, fmt.Sprintf("(local $%s %s)\n", decl.Name.Value, mapTypeToWAT(decl.Type.Literal)))
+		}
+	}
+	// Append local variable declarations
+	for _, local := range locals {
+		out.WriteString(local + " ")
+	}
+
+	// Function body
+	for _, stmt := range s.Body.Statements {
+		out.WriteString(generateStatement(stmt))
+	}
+
+	// Close the function definition
 	out.WriteString(")\n")
+	return out.String()
+}
+
+func generateVariableDeclaration(decl *ast.VariableDeclaration) string {
+	var out strings.Builder
+	watType := mapTypeToWAT(decl.Type.Literal)
+
+	// Check if the variable declaration includes initialization
+	if decl.Value != nil {
+		// out.WriteString(fmt.Sprintf("(local $%s %s) ", decl.Name.Value, watType))
+		out.WriteString(fmt.Sprintf("(local.set $%s ", decl.Name.Value))
+		out.WriteString(generateExpression(decl.Value))
+		out.WriteString(") \n") // Close local.set
+	} else {
+		// Declaration without initialization
+		out.WriteString(fmt.Sprintf("(local $%s %s)\n", decl.Name.Value, watType))
+	}
 
 	return out.String()
 }
@@ -315,6 +358,8 @@ func generateStatement(stmt ast.Statement) string {
 			s.Name.Value,
 			s.Name.Value,
 		)
+	case *ast.VariableDeclaration:
+		return generateVariableDeclaration(s)
 	case *ast.ReturnStatement:
 		return generateReturnStatement(s)
 	case *ast.IfStatement:
