@@ -217,7 +217,8 @@ func TestIsNumber(t *testing.T) {
 		{Token{Type: I8, Literal: "127"}, true},
 		{Token{Type: I16, Literal: "32767"}, true},
 		{Token{Type: I32, Literal: "2147483647"}, true},
-		{Token{Type: F32, Literal: "1.23"}, true},
+		{Token{Type: F32, Literal: "1.23"}, false},
+		{Token{Type: F64, Literal: "1.23"}, false},
 		{Token{Type: PLUS}, false},
 		{Token{Type: MINUS}, false},
 		{Token{Type: IDENTIFIER, Literal: "foo"}, false},
@@ -228,6 +229,33 @@ func TestIsNumber(t *testing.T) {
 		got := tc.token.IsNumber()
 		if got != tc.want {
 			t.Errorf("IsNumber(%v) = %v, want %v", tc.token, got, tc.want)
+		}
+	}
+}
+
+func TestIsFloat(t *testing.T) {
+	tests := []struct {
+		token Token
+		want  bool
+	}{
+		{Token{Type: U8, Literal: "255"}, true},
+		{Token{Type: U16, Literal: "65535"}, true},
+		{Token{Type: U32, Literal: "4294967295"}, true},
+		{Token{Type: I8, Literal: "127"}, true},
+		{Token{Type: I16, Literal: "32767"}, true},
+		{Token{Type: I32, Literal: "2147483647"}, true},
+		{Token{Type: F32, Literal: "1.23"}, true},
+		{Token{Type: F64, Literal: "1.23"}, true},
+		{Token{Type: PLUS}, false},
+		{Token{Type: MINUS}, false},
+		{Token{Type: IDENTIFIER, Literal: "foo"}, false},
+		{Token{Type: ASSIGN}, false},
+	}
+
+	for _, tc := range tests {
+		got := tc.token.IsFloat()
+		if got != tc.want {
+			t.Errorf("IsFloat(%v) = %v, want %v", tc.token, got, tc.want)
 		}
 	}
 }

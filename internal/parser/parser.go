@@ -129,9 +129,20 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		return p.parseStringLiteral()
 	}
 
-	if p.curTokenIs(token.NUMBER) {
+	if p.curTokenIs(token.NUMBER) || p.curTokenIs(token.FLOAT) {
 		p.trace("parsing number", p.curToken.Literal, p.peekToken.Literal)
-		n := p.parseNumberType(p.curToken.Type)
+		var n ast.Expression
+		if p.curTokenIs(token.NUMBER) {
+			n = p.parseNumberType(p.curToken.Type)
+		}
+		if p.curTokenIs(token.FLOAT) {
+			n = p.parseFloatType()
+		}
+
+		if n == nil {
+			p.errors = append(p.errors, "could not parse number")
+			return nil
+		}
 		if p.peekToken.Type == token.MINUS ||
 			p.peekToken.Type == token.PLUS ||
 			p.peekToken.Type == token.ASTERISK ||

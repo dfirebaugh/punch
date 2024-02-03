@@ -78,6 +78,8 @@ func (l *Lexer) evaluateType(t token.Token) token.Type {
 		return l.evaluateKeyword(t.Literal)
 	case t.IsNumber():
 		return token.NUMBER
+	case t.IsFloat():
+		return token.FLOAT
 	default:
 		return token.ILLEGAL
 	}

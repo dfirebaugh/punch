@@ -145,11 +145,25 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseNumberType(typeToken token.Type) ast.Expression {
 	d, err := strconv.Atoi(p.curToken.Literal)
 	if err != nil {
-		panic(err)
+		p.error("could not parse number")
+		return nil
 	}
 	return &ast.IntegerLiteral{
 		Token: p.curToken,
 		Value: int64(d),
+	}
+}
+
+func (p *Parser) parseFloatType() ast.Expression {
+	d, err := strconv.ParseFloat(p.curToken.Literal, 64)
+	if err != nil {
+		p.error("could not parse float")
+		return nil
+	}
+
+	return &ast.FloatLiteral{
+		Token: p.curToken,
+		Value: d,
 	}
 }
 
@@ -382,6 +396,8 @@ func (p *Parser) inferType(value ast.Expression) token.Type {
 	switch value.(type) {
 	case *ast.IntegerLiteral:
 		return token.I32
+	case *ast.FloatLiteral:
+		return token.F32
 	case *ast.StringLiteral:
 		return token.STRING
 	case *ast.BooleanLiteral:

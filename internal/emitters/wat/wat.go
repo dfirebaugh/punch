@@ -99,7 +99,7 @@ func mapTypeToWAT(t string) string {
 		return "i32"
 	case "u64", "i64":
 		return "i64"
-	case "f8", "f16", "f32":
+	case "f8", "f16", "f32", "float":
 		return "f32"
 	case "f64":
 		return "f64"
@@ -375,7 +375,9 @@ func generateStatement(stmt ast.Statement) string {
 func generateExpression(expr ast.Expression) string {
 	switch e := expr.(type) {
 	case *ast.IntegerLiteral:
-		return fmt.Sprintf("(i32.const %d)", e.Value)
+		return fmt.Sprintf("(%s.const %d)", mapTypeToWAT(string(e.Token.Type)), e.Value)
+	case *ast.FloatLiteral:
+		return fmt.Sprintf("(%s.const %f)", mapTypeToWAT(string(e.Token.Type)), e.Value)
 	case *ast.Boolean:
 		if e.Value {
 			return "(i32.const 1)"

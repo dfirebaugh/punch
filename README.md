@@ -127,7 +127,7 @@ main() {
 | if/else | ✅ | ✅ |
 | strings | ✅ | ✅ |
 | integers | ✅ | ✅ |
-| floats | ✅ | ❌ |
+| floats | ✅ |  ✅ |
 | structs | ✅ | ✅ |
 | struct access | ❌ | ❌ |
 | loops | ❌ | ❌ |
@@ -136,7 +136,7 @@ main() {
 | pointers | ❌ | ❌ |
 | enums | ❌ | ❌ |
 | modules | ❌ | ❌ |
-| type inference | ❌ | ❌ |
+| type inference | ✅ | ✅ |
 | interfaces | ❌ | ❌ |
 
 ## Reference

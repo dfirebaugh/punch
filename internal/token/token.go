@@ -26,6 +26,7 @@ const (
 	// Literals
 	STRING = "string"
 	NUMBER = "number"
+	FLOAT  = "float"
 	BOOL   = "bool"
 
 	// Operators

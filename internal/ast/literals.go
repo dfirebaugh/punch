@@ -24,6 +24,22 @@ func (il *IntegerLiteral) String() string {
 	return ""
 }
 
+type FloatLiteral struct {
+	Token token.Token
+	Value float64
+}
+
+func (il *FloatLiteral) expressionNode() {}
+
+func (il *FloatLiteral) TokenLiteral() string { return il.Token.Literal }
+
+func (il *FloatLiteral) String() string {
+	if il != nil {
+		return strconv.FormatFloat(il.Value, 10, 64, 64)
+	}
+	return ""
+}
+
 type StringLiteral struct {
 	Token token.Token
 	Value string
