@@ -72,7 +72,7 @@ func TestEvaluateToken(t *testing.T) {
 			ExpectedLiteral: `1`,
 		},
 		{
-			ExpectedType:    token.NUMBER,
+			ExpectedType:    token.FLOAT,
 			ExpectedLiteral: `42.2`,
 		},
 	}
@@ -113,7 +113,7 @@ func Test_evaluateType(t *testing.T) {
 	expectedTokens := []token.Type{
 		token.ASSIGN,
 		token.NUMBER,
-		token.NUMBER,
+		token.FLOAT,
 		token.STRING,
 		token.IDENTIFIER,
 	}
