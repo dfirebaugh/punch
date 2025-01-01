@@ -13,14 +13,14 @@ func TestParseIdentifier(t *testing.T) {
 	lexer := lexer.New("", input)
 	parser := New(lexer)
 
-	program := parser.ParseProgram()
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
+	program := parser.ParseProgram("")
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program has wrong number of statements. got=%d", len(program.Files[0].Statements))
 	}
 
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	stmt, ok := program.Files[0].Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Files[0].Statements[0])
 	}
 
 	ident, ok := stmt.Expression.(*ast.Identifier)
@@ -46,14 +46,14 @@ func TestParseBoolean(t *testing.T) {
 		lexer := lexer.New("", tt.input)
 		parser := New(lexer)
 
-		program := parser.ParseProgram()
-		if len(program.Statements) != 1 {
-			t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
+		program := parser.ParseProgram("")
+		if len(program.Files[0].Statements) != 1 {
+			t.Fatalf("program has wrong number of statements. got=%d", len(program.Files[0].Statements))
 		}
 
-		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		stmt, ok := program.Files[0].Statements[0].(*ast.ExpressionStatement)
 		if !ok {
-			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Files[0].Statements[0])
 		}
 
 		boolean, ok := stmt.Expression.(*ast.BooleanLiteral)
@@ -72,18 +72,18 @@ func TestParseAssignment(t *testing.T) {
 	lexer := lexer.New("", input)
 	parser := New(lexer)
 
-	program := parser.ParseProgram()
+	program := parser.ParseProgram("")
 	checkParserErrors(t, parser)
 
 	expectedStatements := []string{
 		"i8 x = 5;",
 	}
 
-	if len(expectedStatements) != len(program.Statements) {
-		t.Errorf("program has wrong number of statements. got=%d expected=%d", len(program.Statements), len(expectedStatements))
+	if len(expectedStatements) != len(program.Files[0].Statements) {
+		t.Errorf("program has wrong number of statements. got=%d expected=%d", len(program.Files[0].Statements), len(expectedStatements))
 	}
 
-	for i, s := range program.Statements {
+	for i, s := range program.Files[0].Statements {
 		if s.String() != expectedStatements[i] {
 			t.Errorf("expected %q, got %q", expectedStatements[i], s.String())
 		}
@@ -95,16 +95,16 @@ func TestParseReturnStatement(t *testing.T) {
 	lexer := lexer.New("", input)
 	parser := New(lexer)
 
-	program := parser.ParseProgram()
+	program := parser.ParseProgram("")
 	checkParserErrors(t, parser)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program has wrong number of statements. got=%d", len(program.Files[0].Statements))
 	}
 
-	stmt, ok := program.Statements[0].(*ast.ReturnStatement)
+	stmt, ok := program.Files[0].Statements[0].(*ast.ReturnStatement)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.ReturnStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.ReturnStatement. got=%T", program.Files[0].Statements[0])
 	}
 
 	if stmt.TokenLiteral() != "return" {
@@ -125,16 +125,16 @@ func TestParsePrefixExpression(t *testing.T) {
 	lexer := lexer.New("", input)
 	parser := New(lexer)
 
-	program := parser.ParseProgram()
+	program := parser.ParseProgram("")
 	checkParserErrors(t, parser)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program has wrong number of statements. got=%d", len(program.Files[0].Statements))
 	}
 
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	stmt, ok := program.Files[0].Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Files[0].Statements[0])
 	}
 
 	exp, ok := stmt.Expression.(*ast.PrefixExpression)
@@ -176,23 +176,23 @@ func TestParseInfixExpression(t *testing.T) {
 		lexer := lexer.New("", tt.input)
 		parser := New(lexer)
 
-		program := parser.ParseProgram()
+		program := parser.ParseProgram("")
 		checkParserErrors(t, parser)
 
 		println(program.JSONPretty())
 
-		_, ok := program.Statements[0].(*ast.ExpressionStatement).Expression.(*ast.InfixExpression)
+		_, ok := program.Files[0].Statements[0].(*ast.ExpressionStatement).Expression.(*ast.InfixExpression)
 		if !ok {
-			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Files[0].Statements[0])
 		}
 
-		if len(program.Statements) != 1 {
-			t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
+		if len(program.Files[0].Statements) != 1 {
+			t.Fatalf("program has wrong number of statements. got=%d", len(program.Files[0].Statements))
 		}
 
-		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		stmt, ok := program.Files[0].Statements[0].(*ast.ExpressionStatement)
 		if !ok {
-			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Files[0].Statements[0])
 		}
 
 		exp, ok := stmt.Expression.(*ast.InfixExpression)
@@ -218,12 +218,12 @@ func TestParseInfixLT(t *testing.T) {
 	input := "5 < 6;"
 	l := lexer.New("", input)
 	parser := New(l)
-	program := parser.ParseProgram()
+	program := parser.ParseProgram("")
 	checkParserErrors(t, parser)
 
 	println(program.JSONPretty())
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program has wrong number of statements. got=%d", len(program.Files[0].Statements))
 	}
 }
 
@@ -231,12 +231,12 @@ func TestParseInfixIdentifiersLT(t *testing.T) {
 	input := "z < x"
 	l := lexer.New("", input)
 	parser := New(l)
-	program := parser.ParseProgram()
+	program := parser.ParseProgram("")
 	checkParserErrors(t, parser)
 
 	println(program.JSONPretty())
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has wrong number of statements. got=%d", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program has wrong number of statements. got=%d", len(program.Files[0].Statements))
 	}
 }
 
@@ -351,7 +351,7 @@ func TestStringLiteralReturn(t *testing.T) {
 
 	l := lexer.New("", input)
 	p := New(l)
-	p.ParseProgram()
+	p.ParseProgram("")
 	for _, e := range p.Errors() {
 		t.Errorf("parser has errors: %s", e)
 	}
@@ -365,9 +365,9 @@ func TestStructDeclaration(t *testing.T) {
 	}`
 	l := lexer.New("", input)
 	p := New(l)
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 
-	for _, s := range program.Statements {
+	for _, s := range program.Files[0].Statements {
 		println(s.String())
 	}
 
@@ -387,9 +387,9 @@ i8 main() {
 
 	l := lexer.New("", input)
 	p := New(l)
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 	println(program.JSONPretty())
-	for _, s := range program.Statements {
+	for _, s := range program.Files[0].Statements {
 		fn, ok := s.(*ast.FunctionDeclaration)
 		if !ok {
 			break
@@ -448,7 +448,7 @@ bool isEq(i8 a, i8 b) {
 	l := lexer.New("", input)
 	p := New(l)
 
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 	println(program.JSONPretty())
 	checkParserErrors(t, p)
 }

@@ -14,16 +14,16 @@ func TestParseMultipleReturnTypes(t *testing.T) {
 	l := lexer.New("", input)
 	p := New(l)
 
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Files[0].Statements))
 	}
 
-	stmt, ok := program.Statements[0].(*ast.FunctionStatement)
+	stmt, ok := program.Files[0].Statements[0].(*ast.FunctionStatement)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.FunctionStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.FunctionStatement. got=%T", program.Files[0].Statements[0])
 	}
 
 	if len(stmt.ReturnTypes) != 2 {
@@ -36,16 +36,16 @@ func TestParseFunctionWithControlFlow(t *testing.T) {
 	l := lexer.New("", input)
 	p := New(l)
 
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Files[0].Statements))
 	}
 
-	stmt, ok := program.Statements[0].(*ast.FunctionStatement)
+	stmt, ok := program.Files[0].Statements[0].(*ast.FunctionStatement)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.FunctionStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.FunctionStatement. got=%T", program.Files[0].Statements[0])
 	}
 
 	if len(stmt.ReturnTypes) != 1 {
@@ -58,16 +58,16 @@ func TestParseFunctionStatement(t *testing.T) {
 	l := lexer.New("", input)
 	p := New(l)
 
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Files[0].Statements))
 	}
 
-	stmt, ok := program.Statements[0].(*ast.FunctionStatement)
+	stmt, ok := program.Files[0].Statements[0].(*ast.FunctionStatement)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.FunctionStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.FunctionStatement. got=%T", program.Files[0].Statements[0])
 	}
 
 	if len(stmt.ReturnTypes) != 1 {
@@ -165,11 +165,11 @@ func TestParseExportedFunction(t *testing.T) {
 	input := "pub i8 addTwo(i8 x, string y) {return x + y;}"
 	l := lexer.New("", input)
 	p := New(l)
-	prog := p.ParseProgram()
+	prog := p.ParseProgram("")
 
-	f, ok := prog.Statements[0].(*ast.FunctionStatement)
+	f, ok := prog.Files[0].Statements[0].(*ast.FunctionStatement)
 	if !ok {
-		t.Fatalf("expected *ast.FunctionStatement, got %T", prog.Statements[0].(*ast.FunctionStatement))
+		t.Fatalf("expected *ast.FunctionStatement, got %T", prog.Files[0].Statements[0].(*ast.FunctionStatement))
 	}
 
 	if f.Name.Value != "addTwo" {
@@ -201,6 +201,7 @@ func TestParseExportedFunction(t *testing.T) {
 
 func TestParseFunction(t *testing.T) {
 	input := `
+pkg main
 i8 addTwo(i8 x, string y) {
 	if true {
 		return 0;
@@ -209,11 +210,11 @@ i8 addTwo(i8 x, string y) {
 }`
 	l := lexer.New("", input)
 	p := New(l)
-	prog := p.ParseProgram()
+	prog := p.ParseProgram("")
 
-	f, ok := prog.Statements[0].(*ast.FunctionStatement)
+	f, ok := prog.Files[0].Statements[0].(*ast.FunctionStatement)
 	if !ok {
-		t.Fatalf("expected *ast.FunctionStatement, got %T", prog.Statements[0].(*ast.FunctionStatement))
+		t.Fatalf("expected *ast.FunctionStatement, got %T", prog.Files[0].Statements[0].(*ast.FunctionStatement))
 	}
 
 	if f.Name.Value != "addTwo" {

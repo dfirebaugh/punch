@@ -22,9 +22,9 @@ func TestParseStructLiteral(t *testing.T) {
 	`
 	l := lexer.New("", input)
 	p := New(l)
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 
-	for _, s := range program.Statements {
+	for _, s := range program.Files[0].Statements {
 		println(s.String())
 	}
 
@@ -43,9 +43,9 @@ func TestParseStructLiteralWithoutFieldNames(t *testing.T) {
 	`
 	l := lexer.New("", input)
 	p := New(l)
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 
-	for _, s := range program.Statements {
+	for _, s := range program.Files[0].Statements {
 		println(s.String())
 	}
 
@@ -65,17 +65,17 @@ func TestParseStructDefinition(t *testing.T) {
 
 	l := lexer.New("", input)
 	p := New(l)
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 	checkParserErrors(t, p)
 
 	// Expecting only one statement, the struct declaration
-	if len(program.Statements) != 1 {
-		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d", len(program.Files[0].Statements))
 	}
 
-	structDecl, ok := program.Statements[0].(*ast.StructDefinition)
+	structDecl, ok := program.Files[0].Statements[0].(*ast.StructDefinition)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not *ast.StructDefinition. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not *ast.StructDefinition. got=%T", program.Files[0].Statements[0])
 	}
 
 	if structDecl.Name.Value != "message" {
