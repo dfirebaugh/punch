@@ -11,16 +11,20 @@ import (
 
 func TestLetStatementString(t *testing.T) {
 	program := &ast.Program{
-		Statements: []ast.Statement{
-			&ast.LetStatement{
-				Token: token.Token{Type: token.LET, Literal: "let"},
-				Name: &ast.Identifier{
-					Token: token.Token{Type: token.IDENTIFIER, Literal: "myVar"},
-					Value: "myVar",
-				},
-				Value: &ast.IntegerLiteral{
-					Token: token.Token{Type: token.I32, Literal: "42"},
-					Value: 42,
+		Files: []*ast.File{
+			{
+				Statements: []ast.Statement{
+					&ast.LetStatement{
+						Token: token.Token{Type: token.LET, Literal: "let"},
+						Name: &ast.Identifier{
+							Token: token.Token{Type: token.IDENTIFIER, Literal: "myVar"},
+							Value: "myVar",
+						},
+						Value: &ast.IntegerLiteral{
+							Token: token.Token{Type: token.I32, Literal: "42"},
+							Value: 42,
+						},
+					},
 				},
 			},
 		},
@@ -34,13 +38,18 @@ func TestLetStatementString(t *testing.T) {
 
 func TestReturnStatementString(t *testing.T) {
 	program := &ast.Program{
-		Statements: []ast.Statement{
-			&ast.ReturnStatement{
-				Token: token.Token{Type: token.RETURN, Literal: "return"},
-				ReturnValues: []ast.Expression{&ast.IntegerLiteral{
-					Token: token.Token{Type: token.I32, Literal: "42"},
-					Value: 42,
-				},
+		Files: []*ast.File{
+			{
+				Statements: []ast.Statement{
+					&ast.ReturnStatement{
+						Token: token.Token{Type: token.RETURN, Literal: "return"},
+						ReturnValues: []ast.Expression{
+							&ast.IntegerLiteral{
+								Token: token.Token{Type: token.I32, Literal: "42"},
+								Value: 42,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -73,16 +82,16 @@ func TestInfixExpression(t *testing.T) {
 	for _, tt := range tests {
 		l := lexer.New("", tt.input)
 		p := parser.New(l)
-		program := p.ParseProgram()
+		program := p.ParseProgram("")
 		checkParserErrors(t, p)
 
-		if len(program.Statements) != 1 {
-			t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
+		if len(program.Files[0].Statements) != 1 {
+			t.Fatalf("program has not enough statements. got=%d", len(program.Files[0].Statements))
 		}
 
-		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		stmt, ok := program.Files[0].Statements[0].(*ast.ExpressionStatement)
 		if !ok {
-			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Files[0].Statements[0])
 		}
 
 		exp, ok := stmt.Expression.(*ast.InfixExpression)

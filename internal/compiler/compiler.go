@@ -15,7 +15,7 @@ const (
 func Compile(filename string, source string) (string, []byte, string) {
 	l := lexer.New(filename, source)
 	p := parser.New(l)
-	program := p.ParseProgram()
+	program := p.ParseProgram(filename)
 	var ast string
 	wat := wat.GenerateWAT(program, true)
 	if !astDisabled {

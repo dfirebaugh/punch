@@ -15,11 +15,11 @@ func TestLetStatement(t *testing.T) {
 	p, program := parse(input, t)
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program does not contain 1 statements. got=%d\n", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program does not contain 1 statements. got=%d\n", len(program.Files[0].Statements))
 	}
 
-	stmt := program.Statements[0]
+	stmt := program.Files[0].Statements[0]
 	if stmt.TokenLiteral() != "i8" {
 		t.Fatalf("stmt.TokenLiteral not 'i8'. got=%q", stmt.TokenLiteral())
 	}
@@ -43,11 +43,11 @@ func TestReturnStatement(t *testing.T) {
 	p, program := parse(input, t)
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program does not contain 1 statements. got=%d\n", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program does not contain 1 statements. got=%d\n", len(program.Files[0].Statements))
 	}
 
-	stmt := program.Statements[0]
+	stmt := program.Files[0].Statements[0]
 	if stmt.TokenLiteral() != "return" {
 		t.Fatalf("stmt.TokenLiteral not 'return'. got=%q", stmt.TokenLiteral())
 	}
@@ -67,11 +67,11 @@ func TestFunctionStatement(t *testing.T) {
 	p, program := parse(input, t)
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program does not contain 1 statements. got=%d\n", len(program.Statements))
+	if len(program.Files[0].Statements) != 1 {
+		t.Fatalf("program does not contain 1 statements. got=%d\n", len(program.Files[0].Statements))
 	}
 
-	stmt := program.Statements[0]
+	stmt := program.Files[0].Statements[0]
 	if stmt.TokenLiteral() != "i8" {
 		t.Fatalf("stmt.TokenLiteral not 'i8'. got=%q", stmt.TokenLiteral())
 	}
@@ -114,7 +114,7 @@ func TestIfStatement(t *testing.T) {
 func parse(input string, t *testing.T) (*parser.Parser, *ast.Program) {
 	l := lexer.New("", input)
 	p := parser.New(l)
-	program := p.ParseProgram()
+	program := p.ParseProgram("")
 
 	return p, program
 }

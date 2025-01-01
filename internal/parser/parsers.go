@@ -8,19 +8,69 @@ import (
 	"github.com/dfirebaugh/punch/internal/token"
 )
 
-func (p *Parser) ParseProgram() *ast.Program {
+func (p *Parser) ParseProgram(filename string) *ast.Program {
 	program := &ast.Program{}
-	program.Statements = []ast.Statement{}
+	program.Files = []*ast.File{}
 
 	for !p.curTokenIs(token.EOF) {
-		program.Statements = append(program.Statements, p.parseStatement())
-		p.nextToken()
-		if p.curTokenIs(token.RBRACE) {
-			p.nextToken()
+		file := p.parseFile(filename)
+		if file != nil {
+			program.Files = append(program.Files, file)
 		}
 	}
 
 	return program
+}
+
+func (p *Parser) parseFile(filename string) *ast.File {
+	file := &ast.File{
+		Filename: filename,
+	}
+
+	if !p.expectCurrentTokenIs(token.PACKAGE) {
+		p.error("expected 'pkg' keyword")
+		return nil
+	}
+	p.nextToken()
+	if !p.expectCurrentTokenIs(token.IDENTIFIER) {
+		p.error("expected package name")
+		return nil
+	}
+	file.PackageName = p.curToken.Literal
+	p.nextToken()
+
+	if p.curTokenIs(token.IMPORT) {
+		p.nextToken()
+		if p.curTokenIs(token.LPAREN) {
+			p.nextToken()
+			for !p.curTokenIs(token.RPAREN) {
+				if !p.expectCurrentTokenIs(token.STRING) {
+					p.error("expected import path")
+					return nil
+				}
+				file.Imports = append(file.Imports, p.curToken.Literal)
+				p.nextToken()
+			}
+			p.nextToken()
+		} else {
+			if !p.expectCurrentTokenIs(token.STRING) {
+				p.error("expected import path")
+				return nil
+			}
+			file.Imports = append(file.Imports, p.curToken.Literal)
+			p.nextToken()
+		}
+	}
+
+	for !p.curTokenIs(token.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			file.Statements = append(file.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return file
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -392,6 +442,7 @@ func (p *Parser) parseTypeBasedVariableDeclaration() ast.Statement {
 
 	return varDecl
 }
+
 func (p *Parser) inferType(value ast.Expression) token.Type {
 	switch value.(type) {
 	case *ast.IntegerLiteral:

@@ -26,7 +26,7 @@ func findFunctionDeclarations(node ast.Node) {
 			findFunctionDeclarations(stmt)
 		}
 	case *ast.Program:
-		for _, stmt := range n.Statements {
+		for _, stmt := range n.Files[0].Statements {
 			findFunctionDeclarations(stmt)
 		}
 	}
@@ -38,7 +38,7 @@ func GenerateWAT(node ast.Node, withMemoryManagement bool) string {
 	findFunctionDeclarations(node)
 	switch n := node.(type) {
 	case *ast.Program:
-		return generateStatements(n.Statements, withMemoryManagement)
+		return generateStatements(n.Files[0].Statements, withMemoryManagement)
 	}
 	return ""
 }
