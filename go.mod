@@ -2,7 +2,10 @@ module github.com/dfirebaugh/punch
 
 go 1.20
 
-require github.com/chzyer/readline v1.5.1
+require (
+	github.com/chzyer/readline v1.5.1
+	github.com/sirupsen/logrus v1.9.3
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
