@@ -8,8 +8,10 @@ import (
 	"github.com/dfirebaugh/punch/internal/ast"
 )
 
-var scopeStack []map[string]string
-var stringLiteralMap map[string]string
+var (
+	scopeStack       []map[string]string
+	stringLiteralMap map[string]string
+)
 
 func pushScope() {
 	scopeStack = append(scopeStack, make(map[string]string))
@@ -153,7 +155,7 @@ func collectExpressionLocals(
 			}
 			strInit.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get $%s) (i32.const 0))\n", length-1, localVarName))
 			*stringLiterals = append(*stringLiterals, strInit.String())
-			*initializations = append(*initializations, fmt.Sprintf("(local.get $%s)\n", localVarName))
+			// *initializations = append(*initializations, fmt.Sprintf("(local.get $%s)\n", localVarName))
 		}
 	}
 }

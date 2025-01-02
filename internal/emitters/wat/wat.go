@@ -154,7 +154,7 @@ func generateStringLiteral(str *ast.StringLiteral) string {
 
 	out.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get $%s) (i32.const 0))\n", length-1, localVarName))
 
-	out.WriteString(fmt.Sprintf("(local.get $%s)\n", localVarName))
+	// out.WriteString(fmt.Sprintf("(local.get $%s)\n", localVarName))
 
 	return out.String()
 }

@@ -42,5 +42,5 @@ WebAssembly.instantiate(wasmBuffer, importObject).then(wasmModule => {
 
   console.log(`Sum from add_four: ${sum}`);
   console.log(`Sum from add_two: ${sum2}`);
-  hello(false)
+  hello(true)
 });
