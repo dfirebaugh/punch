@@ -56,6 +56,9 @@ func (l *Lexer) NextToken() token.Token {
 	if l.isMultiCharOperator(t.Type) {
 		t.Literal = string(t.Type)
 	}
+	if t.IsString() {
+		t.Literal = l.processStringLiteral(t.Literal)
+	}
 	l.Collector.Collect(t)
 
 	return t
@@ -83,6 +86,37 @@ func (l *Lexer) evaluateType(t token.Token) token.Type {
 	default:
 		return token.ILLEGAL
 	}
+}
+
+func (l *Lexer) processStringLiteral(literal string) string {
+	var result strings.Builder
+	escaped := false
+
+	for i := 1; i < len(literal)-1; i++ {
+		char := literal[i]
+
+		if escaped {
+			switch char {
+			case 'n':
+				result.WriteByte('\n')
+			case 't':
+				result.WriteByte('\t')
+			case '\\':
+				result.WriteByte('\\')
+			case '"':
+				result.WriteByte('"')
+			default:
+				result.WriteByte(char)
+			}
+			escaped = false
+		} else if char == '\\' {
+			escaped = true
+		} else {
+			result.WriteByte(char)
+		}
+	}
+
+	return result.String()
 }
 
 func (l Lexer) isMultiCharOperator(t token.Type) bool {
@@ -253,6 +287,8 @@ func (l *Lexer) evaluateKeyword(literal string) token.Type {
 		return token.IMPORT
 	case token.Keywords[token.FUNCTION]:
 		return token.FUNCTION
+	case token.Keywords[token.FN]:
+		return token.FUNCTION
 	case token.Keywords[token.LET]:
 		return token.LET
 	case token.Keywords[token.RETURN]:
@@ -273,6 +309,7 @@ func (l *Lexer) evaluateKeyword(literal string) token.Type {
 func (l *Lexer) SaveState() {
 	l.savedScanner = l.scanner
 }
+
 func (l *Lexer) RestoreState() {
 	l.scanner = l.savedScanner
 }

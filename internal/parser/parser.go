@@ -68,29 +68,30 @@ func (p *Parser) registerParseRules() {
 	parseRules := map[token.Type]parseRule{
 		token.IDENTIFIER: {prefixFn: p.parseIdentifier},
 		token.STRING:     {prefixFn: p.parseStringLiteral},
-		token.NUMBER:     {prefixFn: p.parseIntegerLiteral},
-		token.TRUE:       {prefixFn: p.parseBooleanLiteral},
-		token.FALSE:      {prefixFn: p.parseBooleanLiteral},
-		token.BANG:       {prefixFn: p.parsePrefixExpression},
-		token.ASSIGN:     {infixFn: p.parseAssignmentExpression},
-		token.MINUS:      {infixFn: p.parseInfixExpression},
-		token.PLUS:       {infixFn: p.parseInfixExpression},
-		token.ASTERISK:   {infixFn: p.parseInfixExpression},
-		token.SLASH:      {infixFn: p.parseInfixExpression},
-		token.EQ:         {infixFn: p.parseInfixExpression},
-		token.NOT_EQ:     {infixFn: p.parseInfixExpression},
-		token.LT:         {infixFn: p.parseInfixExpression},
-		token.GT:         {infixFn: p.parseInfixExpression},
-		token.AND:        {infixFn: p.parseInfixExpression},
-		token.OR:         {infixFn: p.parseInfixExpression},
+		// token.NUMBER:     {prefixFn: p.parseIntegerLiteral},
+		token.TRUE:     {prefixFn: p.parseBooleanLiteral},
+		token.FALSE:    {prefixFn: p.parseBooleanLiteral},
+		token.BANG:     {prefixFn: p.parsePrefixExpression},
+		token.ASSIGN:   {infixFn: p.parseAssignmentExpression},
+		token.MINUS:    {infixFn: p.parseInfixExpression},
+		token.PLUS:     {infixFn: p.parseInfixExpression},
+		token.ASTERISK: {infixFn: p.parseInfixExpression},
+		token.SLASH:    {infixFn: p.parseInfixExpression},
+		token.EQ:       {infixFn: p.parseInfixExpression},
+		token.NOT_EQ:   {infixFn: p.parseInfixExpression},
+		token.LT:       {infixFn: p.parseInfixExpression},
+		token.GT:       {infixFn: p.parseInfixExpression},
+		token.AND:      {infixFn: p.parseInfixExpression},
+		token.OR:       {infixFn: p.parseInfixExpression},
 	}
 	numberTypes := []token.Type{
 		token.U8, token.U16, token.U32, token.U64,
 		token.I8, token.I16, token.I32, token.I64,
-		token.F32, token.F64}
+		token.F32, token.F64,
+	}
 	for _, numberType := range numberTypes {
 		p.registerPrefix(numberType, func() ast.Expression {
-			return p.parseNumberType(numberType)
+			return p.parseNumberType()
 		})
 	}
 	for tokenType, rule := range parseRules {
@@ -133,7 +134,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		p.trace("parsing number", p.curToken.Literal, p.peekToken.Literal)
 		var n ast.Expression
 		if p.curTokenIs(token.NUMBER) {
-			n = p.parseNumberType(p.curToken.Type)
+			n = p.parseNumberType()
 		}
 		if p.curTokenIs(token.FLOAT) {
 			n = p.parseFloatType()

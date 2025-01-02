@@ -46,30 +46,21 @@ func (rs *ReturnStatement) String() string {
 }
 
 type FunctionStatement struct {
-	IsExported  bool
-	Name        *Identifier
-	Parameters  []*Parameter
-	Body        *BlockStatement
-	ReturnTypes []Expression
+	IsExported bool
+	Name       *Identifier
+	Parameters []*Parameter
+	Body       *BlockStatement
+	ReturnType *Identifier
 }
 
 func (f *FunctionStatement) expressionNode() {}
 func (f *FunctionStatement) statementNode()  {}
 
 func (f *FunctionStatement) TokenLiteral() string {
-	return f.ReturnTypesString()
-}
-
-func (f *FunctionStatement) ReturnTypesString() string {
-	if len(f.ReturnTypes) > 0 {
-		return f.ReturnTypes[0].TokenLiteral()
+	if f.ReturnType != nil {
+		return f.ReturnType.TokenLiteral()
 	}
-	all := []string{"("}
-	for _, r := range f.ReturnTypes {
-		all = append(all, r.TokenLiteral())
-	}
-	all = append(all, ")")
-	return strings.Join(all, ",")
+	return ""
 }
 
 func (f *FunctionStatement) String() string {
@@ -90,7 +81,9 @@ func (f *FunctionStatement) String() string {
 	}
 
 	var out bytes.Buffer
-	out.WriteString(f.ReturnTypesString() + " ")
+	if f.ReturnType != nil {
+		out.WriteString(f.ReturnType.String() + " ")
+	}
 	if f.Name != nil {
 		out.WriteString(f.Name.String())
 	}
@@ -104,17 +97,17 @@ func (f *FunctionStatement) String() string {
 }
 
 type FunctionDeclaration struct {
-	ReturnTypes []*Identifier
-	Name        *Identifier
-	Parameters  []*Parameter
-	Body        *BlockStatement
+	ReturnType *Identifier
+	Name       *Identifier
+	Parameters []*Parameter
+	Body       *BlockStatement
 }
 
 func (*FunctionDeclaration) statementNode() {}
 
 func (fd *FunctionDeclaration) TokenLiteral() string {
-	if len(fd.ReturnTypes) > 0 && fd.ReturnTypes[0] != nil {
-		return fd.ReturnTypes[0].TokenLiteral()
+	if fd.ReturnType != nil {
+		return fd.ReturnType.TokenLiteral()
 	}
 	return ""
 }
@@ -122,15 +115,9 @@ func (fd *FunctionDeclaration) TokenLiteral() string {
 func (fd *FunctionDeclaration) String() string {
 	var out strings.Builder
 
-	out.WriteString("(")
-	for i, rt := range fd.ReturnTypes {
-		out.WriteString(rt.String())
-		if i < len(fd.ReturnTypes)-1 {
-			out.WriteString(", ")
-		}
+	if fd.ReturnType != nil {
+		out.WriteString(fd.ReturnType.String() + " ")
 	}
-	out.WriteString(") ")
-
 	out.WriteString(fd.Name.String())
 
 	out.WriteString("(")

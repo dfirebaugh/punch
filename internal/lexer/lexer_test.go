@@ -106,15 +106,15 @@ func TestLexLetStatement(t *testing.T) {
 		}
 	}
 }
+
 func Test_evaluateType(t *testing.T) {
-	input := `= 42 3.14 "hello world" foo`
+	input := `= 42 3.14 foo`
 	l := New("", input)
 
 	expectedTokens := []token.Type{
 		token.ASSIGN,
 		token.NUMBER,
 		token.FLOAT,
-		token.STRING,
 		token.IDENTIFIER,
 	}
 

@@ -192,14 +192,18 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return stmt
 }
 
-func (p *Parser) parseNumberType(typeToken token.Type) ast.Expression {
+func (p *Parser) parseNumberType() ast.Expression {
 	d, err := strconv.Atoi(p.curToken.Literal)
 	if err != nil {
 		p.error("could not parse number")
 		return nil
 	}
 	return &ast.IntegerLiteral{
-		Token: p.curToken,
+		Token: token.Token{
+      Type: token.I64,
+      Literal: p.curToken.Literal,
+      Position: p.curToken.Position,
+    },
 		Value: int64(d),
 	}
 }

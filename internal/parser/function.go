@@ -9,67 +9,49 @@ import (
 
 func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 	var isExported bool
-	returnTypes := []ast.Expression{}
+	var returnType *ast.Identifier
 
 	if p.curToken.Type == token.PUB {
 		isExported = true
 		p.nextToken()
 	}
 
-	if p.curTokenIs(token.LPAREN) {
+	if p.isTypeToken(p.curToken) {
+		returnType = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 		p.nextToken()
-
-		for !p.curTokenIs(token.RPAREN) {
-			if !p.isTypeToken(p.curToken) {
-				p.error(fmt.Sprintf("expected return type, got %s instead", p.curToken.Type))
-				return nil
-			}
-
-			returnType := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-			returnTypes = append(returnTypes, returnType)
-			p.nextToken()
-
-			if p.curTokenIs(token.COMMA) {
-				p.nextToken()
-			}
-		}
-
-		if !p.expectCurrentTokenIs(token.RPAREN) {
-			p.error("expected ')' after return types")
-			return nil
-		}
-		p.nextToken()
-	} else if p.isTypeToken(p.curToken) {
-		returnType := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		returnTypes = append(returnTypes, returnType)
+	} else if p.curToken.Type == token.FUNCTION {
 		p.nextToken()
 	} else {
-		p.error("expected return type or '(' for multiple return types")
+		p.error(fmt.Sprintf("expected return type or 'fn', got %s instead", p.curToken.Type))
 		return nil
 	}
 
 	ident := p.parseIdentifier()
 	if ident == nil {
+		p.error("expected function name")
 		return nil
 	}
 	p.nextToken()
 
 	params := p.parseFunctionParameters()
-	if !p.expectCurrentTokenIs(token.LBRACE) {
+	if params == nil {
+		p.error("failed to parse function parameters")
 		return nil
 	}
 
-	if p.curTokenIs(token.RPAREN) {
-		p.nextToken()
+	if !p.expectCurrentTokenIs(token.LBRACE) {
+		p.error("expected '{' to start function body")
+		return nil
 	}
+
 	body := p.parseBlockStatement()
 
 	stmt := &ast.FunctionStatement{
-		IsExported:  isExported,
-		ReturnTypes: returnTypes,
-		Name:        ident.(*ast.Identifier),
-		Parameters:  params,
-		Body:        body,
+		IsExported: isExported,
+		ReturnType: returnType,
+		Name:       ident.(*ast.Identifier),
+		Parameters: params,
+		Body:       body,
 	}
 
 	return stmt
@@ -181,7 +163,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	p.trace("parsing return statement", p.curToken.Literal)
 	stmt := &ast.ReturnStatement{Token: p.curToken}
 	if p.curTokenIs(token.RETURN) {
-		p.nextToken() // consume return keyword
+		p.nextToken()
 	}
 	p.trace("after return keyword", p.curToken.Literal, string(p.curToken.Type))
 

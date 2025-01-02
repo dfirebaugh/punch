@@ -14,7 +14,6 @@ const (
 	MemoryDeallocateFunc = "memory_deallocate"
 )
 
-// Global or accessible map for function declarations
 var functionDeclarations map[string]*ast.FunctionDeclaration
 
 func findFunctionDeclarations(node ast.Node) {
@@ -32,7 +31,6 @@ func findFunctionDeclarations(node ast.Node) {
 	}
 }
 
-// GenerateWAT generates WAT IR code for a given AST.
 func GenerateWAT(node ast.Node, withMemoryManagement bool) string {
 	functionDeclarations = make(map[string]*ast.FunctionDeclaration)
 	findFunctionDeclarations(node)
@@ -128,46 +126,35 @@ func generateStatements(stmts []ast.Statement, withMemoryManagement bool) string
 	return out.String()
 }
 
-func generateStringLiteral(str *ast.StringLiteral) string {
-	length := len(str.Value) + 1 // Including null terminator
-	var out strings.Builder
+var localVarCounter int
 
-	// Allocate memory for the string
-	out.WriteString(fmt.Sprintf("(call $%s (i32.const %d))\n", MemoryAllocateFunc, length))
-
-	// Store the string in memory
-	for i, char := range str.Value {
-		out.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get 0) (i32.const %d)) ;; '%c'\n", i, char, char))
-	}
-
-	// Store the null terminator
-	out.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get 0) (i32.const 0))\n", length-1))
-
-	// Return the memory address of the string
-	out.WriteString("(local.get 0)\n")
-
-	return out.String()
+func generateUniqueLocalVarName(base string) string {
+	localVarCounter++
+	return fmt.Sprintf("%s_%d", base, localVarCounter)
 }
 
-func generateFunctionCall(call *ast.FunctionCall) string {
+func generateStringLiteral(str *ast.StringLiteral) string {
+	length := len(str.Value) + 1
 	var out strings.Builder
 
-	if call.FunctionName == "println" && len(call.Arguments) > 0 {
-		// Assume the first argument is a string to print
-		strArg, ok := call.Arguments[0].(*ast.StringLiteral)
-		if !ok {
-			log.Fatal("println expects a string argument")
+	localVarName := generateUniqueLocalVarName("str_ptr")
+
+	out.WriteString(fmt.Sprintf("(local $%s i32)\n", localVarName))
+
+	out.WriteString(fmt.Sprintf("(local.set $%s (call $%s (i32.const %d)))\n", localVarName, MemoryAllocateFunc, length))
+
+	for i, char := range str.Value {
+		if char == '\\' && i+1 < len(str.Value) && str.Value[i+1] == '"' {
+			out.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get $%s) (i32.const %d)) ;; '\"'\n", i, localVarName, '"'))
+			i++
+		} else {
+			out.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get $%s) (i32.const %d)) ;; '%c'\n", i, localVarName, char, char))
 		}
-		out.WriteString(generateStringLiteral(strArg))
-		out.WriteString("(call $println (local.get 0))\n")
-	} else {
-		out.WriteString(fmt.Sprintf("(call $%s ", call.FunctionName))
-		for _, arg := range call.Arguments {
-			out.WriteString(" ")
-			out.WriteString(generateExpression(arg))
-		}
-		out.WriteString(")\n")
 	}
+
+	out.WriteString(fmt.Sprintf("(i32.store8 offset=%d (local.get $%s) (i32.const 0))\n", length-1, localVarName))
+
+	out.WriteString(fmt.Sprintf("(local.get $%s)\n", localVarName))
 
 	return out.String()
 }
@@ -241,66 +228,48 @@ func generateIfStatement(e *ast.IfStatement) string {
 	return out.String()
 }
 
-func generateFunctionStatement(s *ast.FunctionStatement) string {
-	var out strings.Builder
-	if s == nil {
-		log.Println("Encountered nil *ast.FunctionStatement")
-		return ""
-	}
-
-	// Start the function definition
-	out.WriteString(fmt.Sprintf("(func $%s ", s.Name.Value))
-
-	// Check if the function is exported
-	if s.IsExported {
-		out.WriteString(fmt.Sprintf("(export \"%s\") ", s.Name.Value))
-	}
-
-	// Parameters
-	for _, param := range s.Parameters {
-		out.WriteString(fmt.Sprintf("(param $%s %s) ", param.Identifier.Value, mapTypeToWAT(string(param.Type))))
-	}
-
-	// Return type
-	if len(s.ReturnTypes) > 0 {
-		returnType := mapTypeToWAT(s.ReturnTypes[0].TokenLiteral())
-		out.WriteString(fmt.Sprintf("(result %s) \n", returnType))
-	}
-
-	// Local variables
-	var locals []string
-	for _, stmt := range s.Body.Statements {
-		if decl, ok := stmt.(*ast.VariableDeclaration); ok {
-			locals = append(locals, fmt.Sprintf("(local $%s %s)\n", decl.Name.Value, mapTypeToWAT(decl.Type.Literal)))
+func collectLocals(stmt ast.Statement, declaredLocals map[string]bool, locals *[]string) {
+	switch s := stmt.(type) {
+	case *ast.VariableDeclaration:
+		if !declaredLocals[s.Name.Value] {
+			*locals = append(*locals, fmt.Sprintf("(local $%s %s)\n", s.Name.Value, mapTypeToWAT(s.Type.Literal)))
+			declaredLocals[s.Name.Value] = true
+		}
+	case *ast.BlockStatement:
+		for _, stmt := range s.Statements {
+			collectLocals(stmt, declaredLocals, locals)
+		}
+	case *ast.IfStatement:
+		collectLocals(s.Consequence, declaredLocals, locals)
+		if s.Alternative != nil {
+			collectLocals(s.Alternative, declaredLocals, locals)
+		}
+	case *ast.FunctionStatement:
+		for _, stmt := range s.Body.Statements {
+			collectLocals(stmt, declaredLocals, locals)
+		}
+	case *ast.ExpressionStatement:
+		exp := stmt.(*ast.ExpressionStatement)
+		fn, ok := exp.Expression.(*ast.FunctionCall)
+		if !ok {
+			break
+		}
+		collectLocals(stmt, declaredLocals, locals)
+		for _, arg := range fn.Arguments {
+			println(arg.String())
 		}
 	}
-	// Append local variable declarations
-	for _, local := range locals {
-		out.WriteString(local + " ")
-	}
-
-	// Function body
-	for _, stmt := range s.Body.Statements {
-		out.WriteString(generateStatement(stmt))
-	}
-
-	// Close the function definition
-	out.WriteString(")\n")
-	return out.String()
 }
 
 func generateVariableDeclaration(decl *ast.VariableDeclaration) string {
 	var out strings.Builder
 	watType := mapTypeToWAT(decl.Type.Literal)
 
-	// Check if the variable declaration includes initialization
 	if decl.Value != nil {
-		// out.WriteString(fmt.Sprintf("(local $%s %s) ", decl.Name.Value, watType))
 		out.WriteString(fmt.Sprintf("(local.set $%s ", decl.Name.Value))
 		out.WriteString(generateExpression(decl.Value))
-		out.WriteString(") \n") // Close local.set
+		out.WriteString(") \n")
 	} else {
-		// Declaration without initialization
 		out.WriteString(fmt.Sprintf("(local $%s %s)\n", decl.Name.Value, watType))
 	}
 
@@ -320,7 +289,7 @@ func generateReturnStatement(s *ast.ReturnStatement) string {
 	} else {
 		var out strings.Builder
 		out.WriteString("\t\t(local $retPtr i32)\n")
-		out.WriteString(fmt.Sprintf("\t\t(local.set $retPtr (call $%s (i32.const %d)))\n", MemoryAllocateFunc, len(s.ReturnValues)*4)) // Assuming 4 bytes per value for simplicity
+		out.WriteString(fmt.Sprintf("\t\t(local.set $retPtr (call $%s (i32.const %d)))\n", MemoryAllocateFunc, len(s.ReturnValues)*4))
 
 		for i, retVal := range s.ReturnValues {
 			expr := generateExpression(retVal)

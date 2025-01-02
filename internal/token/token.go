@@ -70,6 +70,7 @@ const (
 	RBRACKET = "]"
 
 	// Keywords
+	FN        = "FN"
 	FUNCTION  = "FUNCTION"
 	CONST     = "CONST"
 	LET       = "LET"
@@ -112,6 +113,7 @@ var Keywords = map[Type]string{
 	INTERFACE: "interface",
 	STRUCT:    "struct",
 	TEST:      "test",
+	FN:        "fn",
 	ENUM:      "enum",
 	RETURN:    "return",
 	CONST:     "const",
