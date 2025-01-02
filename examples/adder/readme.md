@@ -4,6 +4,6 @@ build adder wasm
 
 ```bash
 cd ./examples/adders/
-punch build -o ./adder ./adder.pn
+punch build -o ./adder ./adder.punch
 node adder.js
 ```

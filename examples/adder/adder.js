@@ -9,12 +9,11 @@ const encode = function stringToIntegerArray(string, array) {
   }
 };
 
-const decode = function (memory, offset) {
-  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+const decode = function(memory, offset) {
   let string = "";
   let char = memory[offset];
   while (char !== 0) {
-    string += alphabet[char];
+    string += String.fromCharCode(char);
     offset++;
     char = memory[offset];
   }
@@ -36,11 +35,12 @@ const importObject = {
 WebAssembly.instantiate(wasmBuffer, importObject).then(wasmModule => {
   importObject.env.memory = wasmModule.instance.exports.memory;
 
-  const { add_two, add_four } = wasmModule.instance.exports;
+  const { add_two, add_four, hello } = wasmModule.instance.exports;
 
   const sum = add_four(1, 1, 2, 1);
   const sum2 = add_two(2, 20);
 
   console.log(`Sum from add_four: ${sum}`);
   console.log(`Sum from add_two: ${sum2}`);
+  hello(false)
 });
