@@ -4,6 +4,8 @@
 
 [demo playground](https://dfirebaugh.github.io/punch/)
 
+I have some aspirations of working on a backend for this.  To work out some issues with the AST, I added a js code generation step (to easily produce runnable code). I'm not sure if i'll fully commit to that.
+
 ### Build
 To build you will need [golang installed](https://go.dev/doc/install).
 
