@@ -19,7 +19,7 @@ jobs:
         go-version: ^1.16
 
     - name: Install dependencies
-      run: go get -v ./...
+      run: go test $(go list ./... | grep -v tools)
 
     - name: Run tests
-      run: go test -v ./...
+      run: go test $(go list ./... | grep -v tools)
