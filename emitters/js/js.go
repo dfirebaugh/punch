@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dfirebaugh/punch/internal/ast"
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/ast"
+	"github.com/dfirebaugh/punch/token"
 )
 
 const (

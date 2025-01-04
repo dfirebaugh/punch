@@ -3,8 +3,8 @@ package lexer_test
 import (
 	"testing"
 
-	"github.com/dfirebaugh/punch/internal/lexer"
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/lexer"
+	"github.com/dfirebaugh/punch/token"
 )
 
 func TestLexer(t *testing.T) {

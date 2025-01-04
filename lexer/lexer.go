@@ -4,7 +4,7 @@ import (
 	"strings"
 	"text/scanner"
 
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/token"
 )
 
 type Lexer struct {

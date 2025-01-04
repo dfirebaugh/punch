@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/token"
 )
 
 type Identifier struct {
@@ -150,6 +150,7 @@ func (pe *PrefixExpression) TokenLiteral() string {
 	}
 	return pe.TokenLiteral()
 }
+
 func (pe *PrefixExpression) String() string {
 	var out bytes.Buffer
 

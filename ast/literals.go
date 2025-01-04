@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/token"
 )
 
 type IntegerLiteral struct {

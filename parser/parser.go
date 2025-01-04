@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"github.com/dfirebaugh/punch/internal/ast"
-	"github.com/dfirebaugh/punch/internal/lexer"
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/ast"
+	"github.com/dfirebaugh/punch/lexer"
+	"github.com/dfirebaugh/punch/token"
 )
 
 type Parser struct {

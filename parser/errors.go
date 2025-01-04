@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/token"
 	"github.com/sirupsen/logrus"
 )
 

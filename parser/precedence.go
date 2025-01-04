@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/dfirebaugh/punch/internal/token"
+import "github.com/dfirebaugh/punch/token"
 
 // precedence order
 const (

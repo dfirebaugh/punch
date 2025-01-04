@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dfirebaugh/punch/internal/emitters/js"
-	"github.com/dfirebaugh/punch/internal/emitters/wat"
-	"github.com/dfirebaugh/punch/internal/lexer"
-	"github.com/dfirebaugh/punch/internal/parser"
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/emitters/js"
+	"github.com/dfirebaugh/punch/emitters/wat"
+	"github.com/dfirebaugh/punch/lexer"
+	"github.com/dfirebaugh/punch/parser"
+	"github.com/dfirebaugh/punch/token"
 )
 
 func parseHandler(w http.ResponseWriter, r *http.Request) {

@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/dfirebaugh/punch/internal/ast"
+	"github.com/dfirebaugh/punch/ast"
 )
 
 var (

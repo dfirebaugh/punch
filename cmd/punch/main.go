@@ -7,9 +7,9 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/dfirebaugh/punch/internal/emitters/js"
-	"github.com/dfirebaugh/punch/internal/lexer"
-	"github.com/dfirebaugh/punch/internal/parser"
+	"github.com/dfirebaugh/punch/emitters/js"
+	"github.com/dfirebaugh/punch/lexer"
+	"github.com/dfirebaugh/punch/parser"
 )
 
 func main() {

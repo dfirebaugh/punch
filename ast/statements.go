@@ -3,7 +3,7 @@ package ast
 import (
 	"bytes"
 
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/token"
 )
 
 type ExpressionStatement struct {

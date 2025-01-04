@@ -3,8 +3,8 @@ package parser
 import (
 	"fmt"
 
-	"github.com/dfirebaugh/punch/internal/ast"
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/ast"
+	"github.com/dfirebaugh/punch/token"
 )
 
 func (p *Parser) parseStructDefinition() *ast.StructDefinition {
@@ -134,24 +134,24 @@ func (p *Parser) parseStructLiteral() ast.Expression {
 }
 
 func (p *Parser) parseStructFieldAccess(left ast.Expression) ast.Expression {
-    p.nextToken() // consume the dot
+	p.nextToken() // consume the dot
 
-    if !p.expectPeek(token.IDENTIFIER) {
-        p.error("expected identifier after dot operator")
-        return nil
-    }
+	if !p.expectPeek(token.IDENTIFIER) {
+		p.error("expected identifier after dot operator")
+		return nil
+	}
 
-    fieldAccess := &ast.StructFieldAccess{
-        Token: p.curToken, // the dot
-        Left:  left,
-        Field: &ast.Identifier{Token: p.peekToken, Value: p.peekToken.Literal},
-    }
+	fieldAccess := &ast.StructFieldAccess{
+		Token: p.curToken, // the dot
+		Left:  left,
+		Field: &ast.Identifier{Token: p.peekToken, Value: p.peekToken.Literal},
+	}
 
-    p.nextToken() // consume the field identifier
+	p.nextToken() // consume the field identifier
 
-    if p.peekTokenIs(token.DOT) {
-        return p.parseStructFieldAccess(fieldAccess)
-    }
+	if p.peekTokenIs(token.DOT) {
+		return p.parseStructFieldAccess(fieldAccess)
+	}
 
-    return fieldAccess
+	return fieldAccess
 }

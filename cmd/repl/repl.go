@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/dfirebaugh/punch/internal/repl"
+	"github.com/dfirebaugh/punch/repl"
 )
 
 func main() {

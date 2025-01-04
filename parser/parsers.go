@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dfirebaugh/punch/internal/ast"
-	"github.com/dfirebaugh/punch/internal/token"
+	"github.com/dfirebaugh/punch/ast"
+	"github.com/dfirebaugh/punch/token"
 )
 
 func (p *Parser) ParseProgram(filename string) *ast.Program {
@@ -354,10 +354,8 @@ func (p *Parser) parseComment() {
 			p.nextToken()
 		}
 	case token.SLASH_ASTERISK:
-		// Advance past the opening token
 		p.nextToken()
 
-		// Loop until we find the closing token
 		for !(p.curTokenIs(token.ASTERISK) && p.peekTokenIs(token.SLASH)) {
 			if p.curTokenIs(token.EOF) {
 				return
@@ -365,7 +363,6 @@ func (p *Parser) parseComment() {
 			p.nextToken()
 		}
 
-		// Advance past the closing token
 		p.nextToken()
 	default:
 		return
@@ -460,14 +457,10 @@ func (p *Parser) inferType(value ast.Expression) token.Type {
 func (p *Parser) parseForStatement() *ast.ForStatement {
 	p.trace("parsing for statement", p.curToken.Literal, p.peekToken.Literal)
 
-	// Create a ForStatement node in your AST
 	stmt := &ast.ForStatement{Token: p.curToken}
 
-	// Consume the "for" token so p.curToken is now what's after "for"
 	p.nextToken()
 
-	// -- Step 1: Parse the init statement --------------------------------
-	//    e.g., "i32 i = 1;"
 	stmt.Init = p.parseStatement()
 	if stmt.Init == nil {
 		p.error("expected initialization statement in for loop")
@@ -476,8 +469,6 @@ func (p *Parser) parseForStatement() *ast.ForStatement {
 
 	p.trace("current token", p.curToken.Literal)
 
-	// After parsing the init statement, we must see a semicolon.
-	// For example, "i32 i = 1;" must end with ';'
 	if !p.curTokenIs(token.SEMICOLON) {
 		p.error("expected ';' after for-init statement")
 		return nil
@@ -486,10 +477,6 @@ func (p *Parser) parseForStatement() *ast.ForStatement {
 	p.nextToken()
 
 	p.trace("current token", p.curToken.Literal)
-	// -- Step 2: Parse the condition -------------------------------------
-	//    e.g., "i <= n;"
-	// Condition can be empty in Go-like syntax, but your grammar might require it.
-	// We'll parse an expression if we don't see another semicolon right away.
 	if !p.curTokenIs(token.SEMICOLON) {
 		stmt.Condition = p.parseExpression(LOWEST)
 		if stmt.Condition == nil {
@@ -506,20 +493,15 @@ func (p *Parser) parseForStatement() *ast.ForStatement {
 	// consume the second ';'
 	p.nextToken()
 
-	// -- Step 3: Parse the post statement --------------------------------
-	//    e.g., "i = i + 1"
-	// This can also be empty in many “Go-like” syntaxes, but typically you have something.
 	if !p.curTokenIs(token.LBRACE) {
 		stmt.Post = p.parseStatement()
 	}
 
-	// -- Step 4: Finally, we expect '{' to parse the for-block -----------
 	if !p.curTokenIs(token.LBRACE) {
 		p.error("expected '{' after for loop post statement")
 		return nil
 	}
 
-	// parseBlockStatement parses everything in { ... } until matching '}'
 	stmt.Body = p.parseBlockStatement()
 
 	if !p.curTokenIs(token.LBRACE) {
