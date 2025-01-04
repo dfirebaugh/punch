@@ -8,9 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	showFileName bool = false
-)
+var showFileName bool = false
 
 func init() {
 	logrus.SetLevel(logrus.ErrorLevel)

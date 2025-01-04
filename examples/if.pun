@@ -1,0 +1,11 @@
+pkg main
+
+pub fn check_number(i32 x) {
+    if x > 0 {
+        println(x, "is positive")
+    }
+}
+
+check_number(5)
+
+check_number(-3)

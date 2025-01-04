@@ -1,20 +1,17 @@
 package main
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"net/http"
+	"os"
 
+	"github.com/dfirebaugh/punch/internal/emitters/js"
 	"github.com/dfirebaugh/punch/internal/emitters/wat"
 	"github.com/dfirebaugh/punch/internal/lexer"
 	"github.com/dfirebaugh/punch/internal/parser"
 	"github.com/dfirebaugh/punch/internal/token"
 )
-
-//go:embed static/*
-var staticFiles embed.FS
 
 func parseHandler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
@@ -115,18 +112,56 @@ func watHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(watCode))
 }
 
-func main() {
-	publicFS, err := fs.Sub(staticFiles, "static")
-	if err != nil {
-		panic(fmt.Errorf("failed to get subdirectory: %w", err))
+func jsHandler(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			errMessage := fmt.Sprintf("An error occurred: %v", rec)
+			http.Error(w, errMessage, http.StatusInternalServerError)
+		}
+	}()
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+		return
 	}
-	fileServer := http.FileServer(http.FS(publicFS))
+
+	var requestBody struct {
+		Source string `json:"source"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	l := lexer.New("example", requestBody.Source)
+	p := parser.New(l)
+
+	program := p.ParseProgram("ast_explorer")
+
+	t := js.NewTranspiler()
+	jsCode, err := t.Transpile(program)
+	if err != nil {
+		http.Error(w, "Failed to transpile to JS", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/javascript")
+	w.Write([]byte(jsCode))
+}
+
+func main() {
+	staticDir := "./tools/ast_explorer/static"
+	if _, err := os.Stat(staticDir); os.IsNotExist(err) {
+		panic(fmt.Errorf("static directory does not exist: %w", err))
+	}
+	fileServer := http.FileServer(http.Dir(staticDir))
 
 	http.Handle("/", fileServer)
 
 	http.HandleFunc("/parse", parseHandler)
 	http.HandleFunc("/lex", lexHandler)
 	http.HandleFunc("/wat", watHandler)
+	http.HandleFunc("/js", jsHandler)
 
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)

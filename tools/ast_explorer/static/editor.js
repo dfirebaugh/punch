@@ -1,4 +1,4 @@
-import { renderJSON } from "/ast.js";
+import { renderJSON } from "./ast.js";
 
 export const editor = CodeMirror(document.getElementById("editor"), {
   mode: "rust",
@@ -9,20 +9,22 @@ export const editor = CodeMirror(document.getElementById("editor"), {
 pkg main
 
 bool is_eq(i32 a, i32 b) {
-    return a == b
+  return a == b
 }
 
-pub i32 add_two(i32 x, i32 y, i32 z) {
-    println("x = {}, y = {}", x, y, z)
-    println("Hello, World!")
-    return x + y
+pub i32 add_two(i32 x, i32 y) {
+  println("x =", x, "y =", y)
+  println("Hello, World!")
+  return x + y
 }
 
 pub i32 add_four(i32 a, i32 b, i32 c, i32 d) {
-    return a + b + c + d
+  return a + b + c + d
 }
 
-      `.trim(),
+println(add_two(2, 5))
+
+        `.trim(),
 });
 
 const highlightCode = (startLine, startCol, endLine, endCol) => {
@@ -42,9 +44,9 @@ export const fetchAndRenderAST = () => {
     },
     body: JSON.stringify({ source }),
   })
-    .then((response) => {
+    .then(async (response) => {
       if (!response.ok) {
-        throw new Error(`Server error: ${response.statusText}`);
+        throw new Error(`Server error: ${await response.text()}`);
       }
       return response.json();
     })

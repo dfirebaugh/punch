@@ -120,16 +120,9 @@ func (p *Parser) parseFunctionCall(function ast.Expression) ast.Expression {
 		Token:        p.curToken,
 		Function:     function,
 	}
-	p.nextToken()
+	p.nextToken() // consume (
 	exp.Arguments = p.parseFunctionCallArguments()
 
-	if len(exp.Arguments) == 1 && p.peekTokenIs(token.RPAREN) {
-		p.nextToken()
-	}
-	if !p.expectCurrentTokenIs(token.RPAREN) {
-		p.error("expected ')' after function call arguments")
-		return nil
-	}
 	p.trace("parsed function call after args", p.curToken.Literal, p.peekToken.Literal)
 	return exp
 }
@@ -142,20 +135,34 @@ func (p *Parser) parseFunctionCallArguments() []ast.Expression {
 		p.trace("consume LPAREN", p.curToken.Literal, p.peekToken.Literal)
 	}
 
-	args = append(args, p.parseExpression(LOWEST))
-	p.trace("after parsing first arg", args[0].String(), p.curToken.Literal, p.peekToken.Literal)
-
 	if p.curTokenIs(token.RPAREN) {
+		p.nextToken() // consume the closing parenthesis
 		return args
 	}
 
-	for p.curTokenIs(token.COMMA) && !p.curTokenIs(token.RPAREN) {
-		p.nextToken()
-		p.trace("func args 1", p.curToken.Literal, p.peekToken.Literal)
-		args = append(args, p.parseExpression(LOWEST))
-		p.trace("func args 2", p.curToken.Literal, p.peekToken.Literal)
+	firstArg := p.parseExpression(LOWEST)
+	if firstArg == nil {
+		p.error("could not parse first argument in function call")
+		return nil
 	}
-	p.trace("after parsing func args", p.curToken.Literal, p.peekToken.Literal)
+	p.trace("parseFunctionCallArguments: first arg", firstArg.String(), p.curToken.Literal, p.peekToken.Literal)
+	args = append(args, firstArg)
+
+	for p.curTokenIs(token.COMMA) {
+		p.trace("parseFunctionCallArguments: consume COMMA", p.curToken.Literal, p.peekToken.Literal)
+		// consume the comma
+		p.nextToken()
+
+		nextArg := p.parseExpression(LOWEST)
+		if nextArg == nil {
+			p.error("could not parse argument after comma in function call")
+			return nil
+		}
+		p.trace("parseFunctionCallArguments: next arg", nextArg.String(), p.curToken.Literal, p.peekToken.Literal)
+		args = append(args, nextArg)
+	}
+
+	p.trace("parseFunctionCallArguments: end", p.curToken.Literal, p.peekToken.Literal)
 	return args
 }
 

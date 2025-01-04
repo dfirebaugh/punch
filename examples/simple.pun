@@ -1,0 +1,7 @@
+pkg main
+
+fn greet(str name) {
+    println("Hello,", name)
+}
+
+greet("World!")

@@ -85,10 +85,6 @@ func (p *Parser) parseStatement() ast.Statement {
 		return s
 	}
 
-	if p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.INFER) {
-		return p.parseTypeBasedVariableDeclaration()
-	}
-
 	switch p.curToken.Type {
 	case token.TRUE:
 		return p.parseExpressionStatement()
@@ -112,6 +108,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseReturnStatement()
 	case token.IF:
 		return p.parseIfStatement()
+	case token.FOR:
+		return p.parseForStatement()
 	case token.LBRACE:
 		return p.parseBlockStatement()
 	case token.IDENTIFIER:
@@ -167,11 +165,6 @@ func (p *Parser) parseVariableDeclarationOrAssignment() ast.Statement {
 	p.nextToken()
 	value := p.parseExpression(LOWEST)
 
-	if !p.expectPeek(token.SEMICOLON) {
-		p.error("expected ';' after expression")
-		return nil
-	}
-
 	return &ast.VariableDeclaration{
 		Type:  typeToken,
 		Name:  name.(*ast.Identifier),
@@ -185,9 +178,6 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	if stmt.Expression != nil {
 		p.trace("after parsing expression statement", stmt.Expression.String())
 	}
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
 
 	return stmt
 }
@@ -200,10 +190,10 @@ func (p *Parser) parseNumberType() ast.Expression {
 	}
 	return &ast.IntegerLiteral{
 		Token: token.Token{
-      Type: token.I64,
-      Literal: p.curToken.Literal,
-      Position: p.curToken.Position,
-    },
+			Type:     token.I64,
+			Literal:  p.curToken.Literal,
+			Position: p.curToken.Position,
+		},
 		Value: int64(d),
 	}
 }
@@ -222,7 +212,13 @@ func (p *Parser) parseFloatType() ast.Expression {
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
-	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if p.peekTokenIs(token.DOT) {
+		return p.parseStructFieldAccess(ident)
+	}
+
+	return ident
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
@@ -351,16 +347,13 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 
 // parseComment skips over a comment token and moves the parser to the end of the comment.
 func (p *Parser) parseComment() {
-	if p.curToken.Type != token.SLASH_SLASH && p.curToken.Type != token.SLASH_ASTERISK {
-		return
-	}
-
-	if p.curToken.Type == token.SLASH_SLASH {
+	switch p.curToken.Type {
+	case token.SLASH_SLASH:
 		currentLine := p.curToken.Position.Line
 		for p.curToken.Position.Line == currentLine {
 			p.nextToken()
 		}
-	} else if p.curToken.Type == token.SLASH_ASTERISK {
+	case token.SLASH_ASTERISK:
 		// Advance past the opening token
 		p.nextToken()
 
@@ -374,6 +367,8 @@ func (p *Parser) parseComment() {
 
 		// Advance past the closing token
 		p.nextToken()
+	default:
+		return
 	}
 }
 
@@ -460,4 +455,76 @@ func (p *Parser) inferType(value ast.Expression) token.Type {
 	default:
 		return token.ILLEGAL
 	}
+}
+
+func (p *Parser) parseForStatement() *ast.ForStatement {
+	p.trace("parsing for statement", p.curToken.Literal, p.peekToken.Literal)
+
+	// Create a ForStatement node in your AST
+	stmt := &ast.ForStatement{Token: p.curToken}
+
+	// Consume the "for" token so p.curToken is now what's after "for"
+	p.nextToken()
+
+	// -- Step 1: Parse the init statement --------------------------------
+	//    e.g., "i32 i = 1;"
+	stmt.Init = p.parseStatement()
+	if stmt.Init == nil {
+		p.error("expected initialization statement in for loop")
+		return nil
+	}
+
+	p.trace("current token", p.curToken.Literal)
+
+	// After parsing the init statement, we must see a semicolon.
+	// For example, "i32 i = 1;" must end with ';'
+	if !p.curTokenIs(token.SEMICOLON) {
+		p.error("expected ';' after for-init statement")
+		return nil
+	}
+	// Consume the ';'
+	p.nextToken()
+
+	p.trace("current token", p.curToken.Literal)
+	// -- Step 2: Parse the condition -------------------------------------
+	//    e.g., "i <= n;"
+	// Condition can be empty in Go-like syntax, but your grammar might require it.
+	// We'll parse an expression if we don't see another semicolon right away.
+	if !p.curTokenIs(token.SEMICOLON) {
+		stmt.Condition = p.parseExpression(LOWEST)
+		if stmt.Condition == nil {
+			p.error("expected condition expression in for loop")
+			return nil
+		}
+	}
+
+	p.trace("current token", p.curToken.Literal)
+	if !p.curTokenIs(token.SEMICOLON) {
+		p.error("expected ';' after for-loop condition")
+		return nil
+	}
+	// consume the second ';'
+	p.nextToken()
+
+	// -- Step 3: Parse the post statement --------------------------------
+	//    e.g., "i = i + 1"
+	// This can also be empty in many “Go-like” syntaxes, but typically you have something.
+	if !p.curTokenIs(token.LBRACE) {
+		stmt.Post = p.parseStatement()
+	}
+
+	// -- Step 4: Finally, we expect '{' to parse the for-block -----------
+	if !p.curTokenIs(token.LBRACE) {
+		p.error("expected '{' after for loop post statement")
+		return nil
+	}
+
+	// parseBlockStatement parses everything in { ... } until matching '}'
+	stmt.Body = p.parseBlockStatement()
+
+	if !p.curTokenIs(token.LBRACE) {
+		p.nextToken()
+	}
+
+	return stmt
 }

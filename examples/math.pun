@@ -1,0 +1,13 @@
+pkg main
+
+pub fn math_operations() {
+    i32 a = 10
+    i32 b = 20
+    println("Addition: ", a + b)
+    println("Subtraction: ", a - b)
+    println("Multiplication: ", a * b)
+    println("Division: ", b / a)
+    println("Modulus: ", b % a)
+}
+
+math_operations()

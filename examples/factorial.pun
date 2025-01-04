@@ -1,0 +1,11 @@
+pkg main
+
+i32 factorial(i32 n) {
+    i32 result = 1
+    for i32 i = 1; i <= n; i = i + 1 {
+        result = result * i
+    }
+    return result
+}
+
+println("Factorial of 5 is {}", factorial(5));

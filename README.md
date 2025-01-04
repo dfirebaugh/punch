@@ -1,42 +1,43 @@
 # PUNCH 🥊
-`punch` is a hobby programming language.  At the moment, `punch` targets wasm.
+`punch` is a hobby programming language.  
 > I'm mainly working on this as a learning experience.
 
-### Build
-Compile a punch program to wasm:
-```bash
-# build the wasm file
-punch -o ./examples/adder/adder ./examples/adder/adder.p
-# execute the wasm file
-cd ./examples/adder
-node adder.js
-```
+[demo playground](https://dfirebaugh.github.io/punch/)
 
-> a `.wat` file and `.ast` file will also be output for debug purposes
+### Build
+To build you will need [golang installed](https://go.dev/doc/install).
+
+To run code locally, you will need `node` or `bun` installed in your PATH.
+
+```bash
+go build ./cmd/punch/
+
+./punch ./examples/simple.pun # output: Hello, World!
+```
 
 #### Functions
 
 ```rust
 // function declaration
-bool is_best(i8 a, i8 b)
+bool is_best(i32 a, i32 b)
 
 // simple function
-i8 add(i8 a, i8 b) {
+i8 add(i32 a, i32 b) {
     return a + b
 }
 
 // exported function
-pub i8 add_two(i8 a, i8 b) {
+pub i32 add_two(i32 a, i32 b) {
     return a + b
 }
 
 // multiple return types
-(i8, bool) add_eq(i8 a, i8 b) {
+(i32, bool) add_eq(i32 a, i32 b) {
     return a + b, a == b
 }
 
 // no return
-main() {
+fn main() {
     println("hello world")
 }
 ```
@@ -52,12 +53,8 @@ if a && b {
 #### Assignment
 
 ```rust
-i8 a     = 42
-i16 b    = 42
 i32 c    = 42
 i64 d    = 42
-u8 e     = 42
-u16 f    = 42
 u32 g    = 42
 u64 h    = 42
 f32 k    = 42.0
@@ -111,7 +108,7 @@ import (
     "fmt"
 )
 
-main() {
+fn main() {
     fmt.Println("hello, world!")
 }
 ```
@@ -119,25 +116,25 @@ main() {
 #### Status
 > work in progress
 
-| Feature | ast | wasm |
-| - | - | - |
-| function declaration | ✅ | ✅ |
-| function calls | ✅ | ✅ |
-| function multiple returns | ✅ | ❌ |
-| if/else | ✅ | ✅ |
-| strings | ✅ | ✅ |
-| integers | ✅ | ✅ |
-| floats | ✅ |  ✅ |
-| structs | ✅ | ✅ |
-| struct access | ❌ | ❌ |
-| loops | ❌ | ❌ |
-| lists | ❌ | ❌ |
-| maps | ❌ | ❌ |
-| pointers | ❌ | ❌ |
-| enums | ❌ | ❌ |
-| modules | ❌ | ❌ |
-| type inference | ✅ | ✅ |
-| interfaces | ❌ | ❌ |
+| Feature | ast | wasm | js |
+| - | - | - | - |
+| function declaration | ✅ | ✅ | ✅ |
+| function calls | ✅ | ✅ | ✅ |
+| function multiple returns | ❌ | ❌ | ❌ |
+| if/else | ✅ | ✅ | ✅ |
+| strings | ✅ | ✅ | ✅ |
+| integers | ✅ | ✅ | ✅ |
+| floats | ✅ |  ✅ | ❌ |
+| structs | ✅ | ✅ | ✅ |
+| struct access | ✅ | ❌ | ✅ |
+| loops | ✅ | ❌ | ✅ |
+| lists | ❌ | ❌ | ❌ |
+| maps | ❌ | ❌ | ❌ |
+| pointers | ❌ | ❌ | ❌ |
+| enums | ❌ | ❌ | ❌ |
+| modules | ❌ | ❌ | ❌ |
+| type inference | ❌ | ❌ | ❌ |
+| interfaces | ❌ | ❌ | ❌ |
 
 ## Reference
 - [WebAssembly Text Format (WAT)](https://webassembly.github.io/spec/core/text/index.html)

@@ -1,0 +1,9 @@
+pkg main
+
+pub fn count_to(i32 n) {
+    for i32 i = 1; i <= n; i = i + 1 {
+        println(i)
+    }
+}
+
+count_to(5)

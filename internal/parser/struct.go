@@ -60,6 +60,7 @@ func (p *Parser) parseStructFields() []*ast.StructField {
 		p.nextToken()
 		field := p.parseStructField()
 		if field == nil {
+			p.error("field is nil")
 			return nil
 		}
 		fields = append(fields, field)
@@ -79,6 +80,10 @@ func (p *Parser) parseStructLiteral() ast.Expression {
 	structLit := &ast.StructLiteral{
 		Token:  p.curToken,
 		Fields: make(map[string]ast.Expression),
+		StructName: &ast.Identifier{
+			Token: p.curToken,
+			Value: p.curToken.Literal,
+		},
 	}
 
 	p.nextToken()
@@ -124,5 +129,29 @@ func (p *Parser) parseStructLiteral() ast.Expression {
 
 		p.nextToken()
 	}
+	p.nextToken()
 	return structLit
+}
+
+func (p *Parser) parseStructFieldAccess(left ast.Expression) ast.Expression {
+    p.nextToken() // consume the dot
+
+    if !p.expectPeek(token.IDENTIFIER) {
+        p.error("expected identifier after dot operator")
+        return nil
+    }
+
+    fieldAccess := &ast.StructFieldAccess{
+        Token: p.curToken, // the dot
+        Left:  left,
+        Field: &ast.Identifier{Token: p.peekToken, Value: p.peekToken.Literal},
+    }
+
+    p.nextToken() // consume the field identifier
+
+    if p.peekTokenIs(token.DOT) {
+        return p.parseStructFieldAccess(fieldAccess)
+    }
+
+    return fieldAccess
 }

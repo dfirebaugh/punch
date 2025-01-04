@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 
-const wasmBuffer = fs.readFileSync('./adder.wasm');
+const wasmBuffer = fs.readFileSync('./adder.punch.wasm');
 
 const encode = function stringToIntegerArray(string, array) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";

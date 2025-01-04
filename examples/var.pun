@@ -1,0 +1,10 @@
+pkg main
+
+fn main() {
+    i32 a = 5
+    i32 b = 10
+    println("a =", a, "b =", b)
+    println("Sum =", a + b)
+}
+
+main()

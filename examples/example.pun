@@ -1,0 +1,30 @@
+pkg main
+
+bool is_eq(i32 a, i32 b) {
+	return a == b
+}
+
+i32 add_two(i32 x, i32 y, i32 z) {
+	println("x =", x, "y =", y, "z =", z)
+	println("Hello, World!")
+  println("some other string")
+	return x + y
+}
+
+i32 add_four(i32 a, i32 b, i32 c, i32 d) {
+	return a + b + c + d
+}
+
+pub fn hello(bool is_hello) {
+  if is_hello {
+    println("hello, again")
+  }
+  if is_eq(2, 2) {
+    println("2 is equal")
+  }
+
+  println("adding some nums:", add_two(4,5,2))
+}
+
+
+hello(true)

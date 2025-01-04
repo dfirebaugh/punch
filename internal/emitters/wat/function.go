@@ -157,6 +157,12 @@ func collectExpressionLocals(
 			*stringLiterals = append(*stringLiterals, strInit.String())
 			// *initializations = append(*initializations, fmt.Sprintf("(local.get $%s)\n", localVarName))
 		}
+	case *ast.StructLiteral:
+		for _, fieldValue := range e.Fields {
+			collectExpressionLocals(fieldValue, declaredLocals, locals, initializations, stringLiterals)
+		}
+	case *ast.StructFieldAccess:
+		collectExpressionLocals(e.Left, declaredLocals, locals, initializations, stringLiterals)
 	}
 }
 
@@ -164,15 +170,20 @@ func generateFunctionCall(call *ast.FunctionCall) string {
 	var out strings.Builder
 
 	if call.FunctionName == "println" && len(call.Arguments) > 0 {
-		strLiteral, ok := call.Arguments[0].(*ast.StringLiteral)
-		if !ok {
-			log.Fatal("println expects a string argument")
+		arg := call.Arguments[0]
+		if strLiteral, ok := arg.(*ast.StringLiteral); ok {
+			localVarName, exists := stringLiteralMap[strLiteral.Value]
+			if !exists {
+				log.Fatalf("String literal not found: %s", strLiteral.Value)
+			}
+			out.WriteString(fmt.Sprintf("(call $println (local.get $%s))\n", localVarName))
+		} else if fieldAccess, ok := arg.(*ast.StructFieldAccess); ok {
+			out.WriteString(fmt.Sprintf("(call $println %s)\n", generateStructFieldAccess(fieldAccess)))
+		} else if ident, ok := arg.(*ast.Identifier); ok {
+			out.WriteString(fmt.Sprintf("(call $println (local.get $%s))\n", ident.Value))
+		} else {
+			log.Fatal("println expects a string argument or struct field access")
 		}
-		localVarName, exists := stringLiteralMap[strLiteral.Value]
-		if !exists {
-			log.Fatalf("String literal not found: %s", strLiteral.Value)
-		}
-		out.WriteString(fmt.Sprintf("(call $println (local.get $%s))\n", localVarName))
 	} else {
 		out.WriteString(fmt.Sprintf("(call $%s ", call.FunctionName))
 		for _, arg := range call.Arguments {

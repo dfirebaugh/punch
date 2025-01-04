@@ -1,0 +1,23 @@
+pkg main
+
+pub fn log_types() {
+    i32 c = 42
+    i64 d = 42
+    u32 g = 42
+    u64 h = 42
+    //f32 k = 42.0
+    //f64 l = 42.0
+    bool m = true
+    str n = "hello"
+
+    println("i32:", c)
+    println("i64:", d)
+    println("u32:", g)
+    println("u64:", h)
+    //println("f32:", k)
+    //println("f64:", l)
+    println("bool:", m)
+    println("str:", n)
+}
+
+log_types()

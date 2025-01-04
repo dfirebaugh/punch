@@ -85,3 +85,19 @@ func (sl *StructLiteral) String() string {
 	out.WriteString(" }")
 	return out.String()
 }
+
+type StructFieldAccess struct {
+	Token token.Token // The '.' token
+	Left  Expression
+	Field *Identifier
+}
+
+func (s *StructFieldAccess) expressionNode() {}
+
+func (s *StructFieldAccess) TokenLiteral() string {
+	return s.Token.Literal
+}
+
+func (s *StructFieldAccess) String() string {
+	return s.Left.String() + "." + s.Field.String()
+}

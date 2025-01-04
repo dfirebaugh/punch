@@ -1,0 +1,44 @@
+
+pkg main
+
+struct extra {
+  str note
+}
+
+struct other {
+  str message
+  extra extra
+}
+
+struct message {
+  i32 sender
+  i32 receiver
+  str body
+  other other
+}
+
+fn send_message() {
+  message msg = message {
+    sender: 2,
+    receiver: 4,
+    body: "hello, world",
+    other: other {
+      message: "hello",
+      extra: extra {
+        note: "this is extra info",
+      },
+    },
+  }
+
+  println(msg)
+  println(msg.sender)
+  println(msg.receiver)
+  println(msg.body)
+  println(msg.other)
+  println(msg.other.message)
+  println(msg.other.extra)
+  println(msg.other.extra.note)
+}
+
+send_message()
+

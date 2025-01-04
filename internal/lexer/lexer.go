@@ -246,6 +246,8 @@ func (l Lexer) evaluateSpecialCharacter(literal string) token.Type {
 		return token.RBRACE
 	case token.BANG:
 		return token.BANG
+	case token.MOD:
+		return token.MOD
 	default:
 		return token.ILLEGAL
 	}
@@ -275,6 +277,8 @@ func (l *Lexer) evaluateKeyword(literal string) token.Type {
 		return token.F64
 	case token.STRING:
 		return token.STRING
+	case token.Keywords[token.STRING]:
+		return token.STRING
 	case token.Keywords[token.STRUCT]:
 		return token.STRUCT
 	case token.Keywords[token.INTERFACE]:
@@ -297,6 +301,8 @@ func (l *Lexer) evaluateKeyword(literal string) token.Type {
 		return token.IF
 	case token.Keywords[token.TRUE]:
 		return token.TRUE
+	case token.Keywords[token.FOR]:
+		return token.FOR
 	case token.Keywords[token.FALSE]:
 		return token.FALSE
 	case token.Keywords[token.PUB]:

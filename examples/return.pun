@@ -1,0 +1,7 @@
+pkg main
+
+i32 square(i32 n) {
+    return n * n
+}
+
+println("Square of 4 is", square(4))

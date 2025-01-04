@@ -24,7 +24,7 @@ const (
 	EOF     = "EOF"
 
 	// Literals
-	STRING = "string"
+	STRING = "STRING"
 	NUMBER = "number"
 	FLOAT  = "float"
 	BOOL   = "bool"
@@ -75,6 +75,7 @@ const (
 	CONST     = "CONST"
 	LET       = "LET"
 	RETURN    = "RETURN"
+	FOR       = "FOR"
 	IF        = "if"
 	ELSE      = "else"
 	PUB       = "pub"
@@ -120,7 +121,9 @@ var Keywords = map[Type]string{
 	LET:       "let",
 	IF:        "if",
 	ELSE:      "else",
+	FOR:       "for",
 	TRUE:      "true",
 	FALSE:     "false",
 	PUB:       "pub",
+	STRING:    "str",
 }

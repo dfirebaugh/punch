@@ -14,7 +14,10 @@ const (
 	MemoryDeallocateFunc = "memory_deallocate"
 )
 
-var functionDeclarations map[string]*ast.FunctionDeclaration
+var (
+	functionDeclarations map[string]*ast.FunctionDeclaration
+	structDefinitions    map[string]*ast.StructDefinition
+)
 
 func findFunctionDeclarations(node ast.Node) {
 	switch n := node.(type) {
@@ -31,9 +34,26 @@ func findFunctionDeclarations(node ast.Node) {
 	}
 }
 
+func findStructDefinitions(node ast.Node) {
+	switch n := node.(type) {
+	case *ast.StructDefinition:
+		structDefinitions[n.Name.Value] = n
+	case *ast.BlockStatement:
+		for _, stmt := range n.Statements {
+			findStructDefinitions(stmt)
+		}
+	case *ast.Program:
+		for _, stmt := range n.Files[0].Statements {
+			findStructDefinitions(stmt)
+		}
+	}
+}
+
 func GenerateWAT(node ast.Node, withMemoryManagement bool) string {
 	functionDeclarations = make(map[string]*ast.FunctionDeclaration)
+	structDefinitions = make(map[string]*ast.StructDefinition)
 	findFunctionDeclarations(node)
+	findStructDefinitions(node)
 	switch n := node.(type) {
 	case *ast.Program:
 		return generateStatements(n.Files[0].Statements, withMemoryManagement)
@@ -102,6 +122,9 @@ func mapTypeToWAT(t string) string {
 	case "f64":
 		return "f64"
 	default:
+		if _, ok := structDefinitions[t]; ok {
+			return "i32"
+		}
 		log.Fatalf("Unsupported type: %s", t)
 		return ""
 	}
@@ -400,6 +423,52 @@ func generateExpression(expr ast.Expression) string {
 		out.WriteString(")\n")
 		out.WriteString(")\n")
 		return out.String()
+	case *ast.StructLiteral:
+		return generateStructLiteral(e)
+	case *ast.StructFieldAccess:
+		return generateStructFieldAccess(e)
 	}
 	return ""
+}
+
+func generateStructLiteral(lit *ast.StructLiteral) string {
+	structDef, ok := structDefinitions[lit.StructName.Value]
+	if !ok {
+		log.Fatalf("Undefined struct: %s", lit.StructName.Value)
+	}
+
+	var out strings.Builder
+	structSize := len(structDef.Fields) * 4
+	out.WriteString("(local $struct_ptr i32)\n")
+	out.WriteString(fmt.Sprintf("(local.set $struct_ptr (call $%s (i32.const %d)))\n", MemoryAllocateFunc, structSize))
+
+	for i, field := range structDef.Fields {
+		fieldValue, ok := lit.Fields[field.Name.Value]
+		if !ok {
+			log.Fatalf("Missing value for field: %s", field.Name.Value)
+		}
+		out.WriteString(fmt.Sprintf("(i32.store offset=%d (local.get $struct_ptr) %s)\n", i*4, generateExpression(fieldValue)))
+	}
+
+	out.WriteString("(local.get $struct_ptr)\n")
+	return out.String()
+}
+
+func generateStructFieldAccess(access *ast.StructFieldAccess) string {
+	structDef, ok := structDefinitions[access.Left.(*ast.Identifier).Value]
+	if !ok {
+		log.Fatalf("Undefined struct: %s", access.Left.(*ast.Identifier).Value)
+	}
+
+	var fieldIndex int
+	for i, field := range structDef.Fields {
+		if field.Name.Value == access.Field.Value {
+			fieldIndex = i
+			break
+		}
+	}
+
+	var out strings.Builder
+	out.WriteString(fmt.Sprintf("(i32.load offset=%d (local.get $%s))\n", fieldIndex*4, access.Left.(*ast.Identifier).Value))
+	return out.String()
 }
