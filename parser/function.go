@@ -1,13 +1,11 @@
 package parser
 
 import (
-	"fmt"
-
 	"github.com/dfirebaugh/punch/ast"
 	"github.com/dfirebaugh/punch/token"
 )
 
-func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
+func (p *Parser) parseFunctionStatement() (*ast.FunctionStatement, error) {
 	var isExported bool
 	var returnType *ast.Identifier
 
@@ -22,29 +20,34 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 	} else if p.curToken.Type == token.FUNCTION {
 		p.nextToken()
 	} else {
-		p.error(fmt.Sprintf("expected return type or 'fn', got %s instead", p.curToken.Type))
-		return nil
+		return nil, p.errorf("expected return type or 'fn', got %s instead", p.curToken.Type)
 	}
 
-	ident := p.parseIdentifier()
+	ident, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
 	if ident == nil {
-		p.error("expected function name")
-		return nil
+		return nil, p.error("expected function name")
 	}
 	p.nextToken()
 
-	params := p.parseFunctionParameters()
+	params, err := p.parseFunctionParameters()
+	if err != nil {
+		return nil, err
+	}
 	if params == nil {
-		p.error("failed to parse function parameters")
-		return nil
+		return nil, p.error("failed to parse function parameters")
 	}
 
 	if !p.expectCurrentTokenIs(token.LBRACE) {
-		p.error("expected '{' to start function body")
-		return nil
+		return nil, p.error("expected '{' to start function body")
 	}
 
-	body := p.parseBlockStatement()
+	body, err := p.parseBlockStatement()
+	if err != nil {
+		return nil, err
+	}
 
 	stmt := &ast.FunctionStatement{
 		IsExported: isExported,
@@ -54,20 +57,23 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 		Body:       body,
 	}
 
-	return stmt
+	return stmt, nil
 }
 
-func (p *Parser) parseFunctionParameters() []*ast.Parameter {
+func (p *Parser) parseFunctionParameters() ([]*ast.Parameter, error) {
 	parameters := []*ast.Parameter{}
 
 	if !p.expectCurrentTokenIs(token.LPAREN) {
-		return parameters
+		return parameters, nil
 	}
 
 	p.nextToken()
 
 	for !p.curTokenIs(token.RPAREN) {
-		param := p.parseFunctionParameter()
+		param, err := p.parseFunctionParameter()
+		if err != nil {
+			return nil, err
+		}
 		if param != nil {
 			parameters = append(parameters, param)
 		}
@@ -82,21 +88,19 @@ func (p *Parser) parseFunctionParameters() []*ast.Parameter {
 		p.nextToken()
 	}
 
-	return parameters
+	return parameters, nil
 }
 
-func (p *Parser) parseFunctionParameter() *ast.Parameter {
+func (p *Parser) parseFunctionParameter() (*ast.Parameter, error) {
 	if !p.isTypeToken(p.curToken) {
-		p.error(fmt.Sprintf("expected type token, got %s instead", p.curToken.Type))
-		return nil
+		return nil, p.errorf("expected type token, got %s instead", p.curToken.Type)
 	}
 	paramType := p.curToken
 
 	p.nextToken()
 
 	if !p.curTokenIs(token.IDENTIFIER) {
-		p.error(fmt.Sprintf("expected identifier token, got %s instead", p.curToken.Type))
-		return nil
+		return nil, p.errorf("expected identifier token, got %s instead", p.curToken.Type)
 	}
 	paramName := p.curToken.Literal
 
@@ -110,10 +114,11 @@ func (p *Parser) parseFunctionParameter() *ast.Parameter {
 			Value: paramName,
 		},
 		Type: paramType.Type,
-	}
+	}, nil
 }
 
-func (p *Parser) parseFunctionCall(function ast.Expression) ast.Expression {
+func (p *Parser) parseFunctionCall(function ast.Expression) (ast.Expression, error) {
+	var err error
 	p.trace("parsing function call", function.TokenLiteral(), p.peekToken.Literal)
 	exp := &ast.FunctionCall{
 		FunctionName: function.TokenLiteral(),
@@ -121,13 +126,13 @@ func (p *Parser) parseFunctionCall(function ast.Expression) ast.Expression {
 		Function:     function,
 	}
 	p.nextToken() // consume (
-	exp.Arguments = p.parseFunctionCallArguments()
+	exp.Arguments, err = p.parseFunctionCallArguments()
 
 	p.trace("parsed function call after args", p.curToken.Literal, p.peekToken.Literal)
-	return exp
+	return exp, err
 }
 
-func (p *Parser) parseFunctionCallArguments() []ast.Expression {
+func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 	args := []ast.Expression{}
 	p.trace("parsing func call args beginning", p.curToken.Literal, p.peekToken.Literal)
 	if p.curTokenIs(token.LPAREN) {
@@ -137,13 +142,15 @@ func (p *Parser) parseFunctionCallArguments() []ast.Expression {
 
 	if p.curTokenIs(token.RPAREN) {
 		p.nextToken() // consume the closing parenthesis
-		return args
+		return args, nil
 	}
 
-	firstArg := p.parseExpression(LOWEST)
+	firstArg, err := p.parseExpression(LOWEST)
+	if err != nil {
+		return nil, err
+	}
 	if firstArg == nil {
-		p.error("could not parse first argument in function call")
-		return nil
+		return nil, p.error("could not parse first argument in function call")
 	}
 	p.trace("parseFunctionCallArguments: first arg", firstArg.String(), p.curToken.Literal, p.peekToken.Literal)
 	args = append(args, firstArg)
@@ -153,20 +160,22 @@ func (p *Parser) parseFunctionCallArguments() []ast.Expression {
 		// consume the comma
 		p.nextToken()
 
-		nextArg := p.parseExpression(LOWEST)
+		nextArg, err := p.parseExpression(LOWEST)
+		if err != nil {
+			return nil, err
+		}
 		if nextArg == nil {
-			p.error("could not parse argument after comma in function call")
-			return nil
+			return nil, p.error("could not parse argument after comma in function call")
 		}
 		p.trace("parseFunctionCallArguments: next arg", nextArg.String(), p.curToken.Literal, p.peekToken.Literal)
 		args = append(args, nextArg)
 	}
 
 	p.trace("parseFunctionCallArguments: end", p.curToken.Literal, p.peekToken.Literal)
-	return args
+	return args, nil
 }
 
-func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+func (p *Parser) parseReturnStatement() (*ast.ReturnStatement, error) {
 	p.trace("parsing return statement", p.curToken.Literal)
 	stmt := &ast.ReturnStatement{Token: p.curToken}
 	if p.curTokenIs(token.RETURN) {
@@ -180,10 +189,12 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 		}
 
 		for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
-			expr := p.parseExpression(LOWEST)
+			expr, err := p.parseExpression(LOWEST)
+			if err != nil {
+				return nil, err
+			}
 			if expr == nil {
-				p.error("expected expression in return statement")
-				return nil
+				return nil, p.error("expected expression in return statement")
 			}
 
 			stmt.ReturnValues = append(stmt.ReturnValues, expr)
@@ -196,19 +207,21 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 	} else {
 		p.trace("parse return value", p.curToken.Literal, p.peekToken.Literal)
-		expr := p.parseExpression(LOWEST)
+		expr, err := p.parseExpression(LOWEST)
+		if err != nil {
+			return nil, err
+		}
 		p.trace("after parse return value", expr.String())
 		p.trace("return expression", expr.String())
 		if expr != nil {
 			stmt.ReturnValues = append(stmt.ReturnValues, expr)
 		} else {
-			p.error("expected expression after 'return'")
-			return nil
+			return nil, p.error("expected expression after 'return'")
 		}
 	}
 	if p.peekTokenIs(token.RBRACE) {
 		p.nextToken()
 	}
 
-	return stmt
+	return stmt, nil
 }

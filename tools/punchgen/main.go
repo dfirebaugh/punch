@@ -21,7 +21,12 @@ func parse(this js.Value, p []js.Value) interface{} {
 	source := p[0].String()
 	l := lexer.New("example", source)
 	parser := parser.New(l)
-	program := parser.ParseProgram("ast_explorer")
+	program, err := parser.ParseProgram("ast_explorer")
+	if err != nil {
+		return map[string]interface{}{
+			"error": fmt.Sprintf("Failed to parse program: %v", err),
+		}
+	}
 
 	astJSON, err := json.MarshalIndent(program, "", "  ")
 	if err != nil {

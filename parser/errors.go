@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var showFileName bool = false
+var showFileName bool = true
 
 func init() {
 	logrus.SetLevel(logrus.ErrorLevel)
@@ -19,12 +19,19 @@ func (p *Parser) noPrefixParseFnError(t token.Type) {
 	p.error(msg)
 }
 
-func (p *Parser) error(msg ...string) {
+func (p *Parser) errorf(format string, args ...interface{}) error {
+	message := fmt.Sprintf(format, args...)
 	if !showFileName {
-		logrus.Errorf("[%d:%d]: %s", p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
-		return
+		return fmt.Errorf("[%d:%d]: %s", p.curToken.Position.Line, p.curToken.Position.Column, message)
 	}
-	logrus.Errorf("%s:[%d:%d]: %s", p.curToken.Position.Filename, p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
+	return fmt.Errorf("%s:[%d:%d]: %s", p.curToken.Position.Filename, p.curToken.Position.Line, p.curToken.Position.Column, message)
+}
+
+func (p *Parser) error(msg ...string) error {
+	if !showFileName {
+		return fmt.Errorf("[%d:%d]: %s", p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
+	}
+	return fmt.Errorf("%s:[%d:%d]: %s", p.curToken.Position.Filename, p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
 }
 
 func (p *Parser) debug(msg ...string) {

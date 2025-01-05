@@ -37,7 +37,11 @@ func parseHandler(w http.ResponseWriter, r *http.Request) {
 	l := lexer.New("example", requestBody.Source)
 	p := parser.New(l)
 
-	program := p.ParseProgram("ast_explorer")
+	program, err := p.ParseProgram("ast_explorer")
+	if err != nil {
+		http.Error(w, "Failded to parse program", http.StatusInternalServerError)
+		return
+	}
 
 	astJSON, err := json.MarshalIndent(program, "", "  ")
 	if err != nil {

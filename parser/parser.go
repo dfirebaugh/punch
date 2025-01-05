@@ -29,8 +29,8 @@ type parseRule struct {
 }
 
 type (
-	prefixParseFn func() ast.Expression
-	infixParseFn  func(ast.Expression) ast.Expression
+	prefixParseFn func() (ast.Expression, error)
+	infixParseFn  func(ast.Expression) (ast.Expression, error)
 )
 
 type ParseFn interface {
@@ -92,7 +92,7 @@ func (p *Parser) registerParseRules() {
 		token.F32, token.F64,
 	}
 	for _, numberType := range numberTypes {
-		p.registerPrefix(numberType, func() ast.Expression {
+		p.registerPrefix(numberType, func() (ast.Expression, error) {
 			return p.parseNumberType()
 		})
 	}
@@ -106,12 +106,16 @@ func (p *Parser) registerParseRules() {
 	}
 }
 
-func (p *Parser) parseExpression(precedence int) ast.Expression {
+func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
+	var err error
 	p.trace("parseExpression", p.curToken.Literal, p.peekToken.Literal)
 
 	if p.curToken.Literal == token.TRUE || p.curToken.Literal == token.FALSE {
 		p.trace("parsing bool", p.curToken.Literal, p.peekToken.Literal)
-		b := p.parseBooleanLiteral()
+		b, err := p.parseBooleanLiteral()
+		if err != nil {
+			return nil, err
+		}
 		if p.peekToken.Type == token.MINUS ||
 			p.peekToken.Type == token.PLUS ||
 			p.peekToken.Type == token.ASTERISK ||
@@ -130,7 +134,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 			return p.parseInfixExpression(b)
 		}
 		p.nextToken()
-		return b
+		return b, nil
 	}
 
 	if p.curTokenIs(token.STRING) {
@@ -141,15 +145,20 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		p.trace("parsing number", p.curToken.Literal, p.peekToken.Literal)
 		var n ast.Expression
 		if p.curTokenIs(token.NUMBER) {
-			n = p.parseNumberType()
+			n, err = p.parseNumberType()
+			if err != nil {
+				return nil, err
+			}
 		}
 		if p.curTokenIs(token.FLOAT) {
-			n = p.parseFloatType()
+			n, err = p.parseFloatType()
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		if n == nil {
-			p.errors = append(p.errors, "could not parse number")
-			return nil
+			return nil, p.error("could not parse number")
 		}
 		if p.peekToken.Type == token.MINUS ||
 			p.peekToken.Type == token.PLUS ||
@@ -169,7 +178,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 			return p.parseInfixExpression(n)
 		}
 		p.nextToken()
-		return n
+		return n, nil
 	}
 
 	if p.curToken.Type == token.IDENTIFIER {
@@ -187,17 +196,23 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 			p.peekToken.Type == token.AND ||
 			p.peekToken.Type == token.OR {
 			p.trace("parsing identifier infix expression", p.curToken.Literal, p.peekToken.Literal)
-			ident := p.parseIdentifier()
+			ident, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
 			if ident == nil {
-				p.error("identifier is nil")
+				return nil, p.error("identifier is nil")
 			}
 			p.nextToken()
 			return p.parseInfixExpression(ident)
 		}
 		if p.peekToken.Type == token.ASSIGN || p.peekToken.Type == token.INFER {
-			ident := p.parseIdentifier()
+			ident, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
 			if ident == nil {
-				p.error("identifier is nil")
+				return nil, p.error("identifier is nil")
 			}
 			p.nextToken()
 			return p.parseAssignmentExpression(ident)
@@ -208,21 +223,30 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		}
 		if p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LPAREN) {
 			p.trace("parsing identifier functioncall expression", p.curToken.Literal, p.peekToken.Literal)
-			ident := p.parseIdentifier()
-			if ident == nil {
-				p.error("identifier is nil")
+			ident, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
 			}
-			fnCall := p.parseFunctionCall(ident)
+			if ident == nil {
+				return nil, p.error("identifier is nil")
+			}
+			fnCall, err := p.parseFunctionCall(ident)
+			if err != nil {
+				return nil, err
+			}
 			p.trace("parsed identifier functioncall expression", p.curToken.Literal, p.peekToken.Literal)
 			if p.curTokenIs(token.RPAREN) {
 				p.nextToken()
 			}
-			return fnCall
+			return fnCall, nil
 		}
 
-		ident := p.parseIdentifier()
+		ident, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
 		if ident == nil {
-			p.error("identifier is nil")
+			return nil, p.error("identifier is nil")
 		}
 
 		if p.peekTokenIs(token.DOT) {
@@ -230,30 +254,35 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		}
 
 		p.nextToken()
-		return ident
+		return ident, nil
 	}
 
 	if p.curTokenIs(token.RPAREN) {
 		p.nextToken()
-		return nil
+		return nil, nil
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
-		p.noPrefixParseFnError(p.curToken.Type)
-		panic("no prefix parse function for " + p.curToken.Literal)
+		return nil, p.errorf("no prefix parse function for %s", p.curToken.Literal)
 	}
-	leftExp := prefix()
+	leftExp, err := prefix()
+	if err != nil {
+		return nil, err
+	}
 
 	for precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
-			return leftExp
+			return leftExp, nil
 		}
 		p.nextToken()
-		leftExp = infix(leftExp)
+		leftExp, err = infix(leftExp)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return leftExp
+	return leftExp, nil
 }
 
 func (p *Parser) nextToken() {

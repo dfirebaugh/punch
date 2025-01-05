@@ -10,6 +10,7 @@ import (
 	"github.com/dfirebaugh/punch/emitters/js"
 	"github.com/dfirebaugh/punch/lexer"
 	"github.com/dfirebaugh/punch/parser"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -39,7 +40,7 @@ func main() {
 	filename := flag.Arg(0)
 	fileContents, err := os.ReadFile(filename)
 	if err != nil {
-		panic(err)
+		logrus.Error(err)
 	}
 
 	l := lexer.New(filename, string(fileContents))
@@ -53,10 +54,14 @@ func main() {
 	}
 
 	p := parser.New(l)
-	program := p.ParseProgram(filename)
+	program, err := p.ParseProgram(filename)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
 	ast, err := program.JSONPretty()
 	if err != nil {
-		panic(err)
+		logrus.Error(err)
 	}
 
 	if outputFile == "" {
