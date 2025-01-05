@@ -5,6 +5,7 @@ import (
 	"github.com/dfirebaugh/punch/emitters/wat"
 	"github.com/dfirebaugh/punch/lexer"
 	"github.com/dfirebaugh/punch/parser"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -15,7 +16,11 @@ const (
 func Compile(filename string, source string) (string, []byte, string) {
 	l := lexer.New(filename, source)
 	p := parser.New(l)
-	program := p.ParseProgram(filename)
+	program, err := p.ParseProgram(filename)
+	if err != nil {
+		logrus.Error(err)
+		return "", nil, ""
+	}
 	var ast string
 	wat := wat.GenerateWAT(program, true)
 	if !astDisabled {

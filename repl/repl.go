@@ -67,7 +67,11 @@ func (repl *REPL) handleLine(line string) bool {
 		fmt.Fprintf(repl.out, "Command entered: %s\n", line)
 		l := lexer.New("repl", line)
 		p := parser.New(l)
-		program := p.ParseProgram("repl")
+		program, err := p.ParseProgram("repl")
+		if err != nil {
+			println(err.Error())
+			return true
+		}
 
 		println("ast:")
 		json, err := program.JSONPretty()

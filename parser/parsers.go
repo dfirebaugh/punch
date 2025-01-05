@@ -315,7 +315,7 @@ func (p *Parser) parseIfStatement() (*ast.IfStatement, error) {
 	}
 
 	if !p.expectCurrentTokenIs(token.LBRACE) {
-		return nil, p.errorf("expecting current token is a '{'", p.curToken.Literal, p.peekToken.Literal)
+		return nil, p.error("expecting current token is a '{'", p.curToken.Literal, p.peekToken.Literal)
 	}
 	stmt.Consequence, err = p.parseBlockStatement()
 	if err != nil {

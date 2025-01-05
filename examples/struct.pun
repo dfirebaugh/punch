@@ -1,5 +1,9 @@
 pkg main
 
+import (
+
+)
+
 struct extra {
   str note
 }
@@ -39,5 +43,21 @@ fn send_message() {
   println(msg.other.extra.note)
 }
 
-send_message()
 
+message get_message() {
+  message msg = message {
+    sender: 2,
+    receiver: 4,
+    body: "hello, world",
+    other: other {
+      message: "hello",
+      extra: extra {
+        note: "this is extra info",
+      },
+    },
+  }
+  return msg
+}
+
+message msg = get_message()
+println(msg)
