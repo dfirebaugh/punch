@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>punch lang</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/codemirror/theme/dracula.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/codemirror/lib/codemirror.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/codemirror/lib/codemirror.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror/addon/mode/simple.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror/mode/rust/rust.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror/mode/javascript/javascript.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror/keymap/vim.js"></script>
+
+    <script src="https://unpkg.com/prettier@2.3.2/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@2.3.2/parser-babel.js"></script>
+
+    <script src="wat.js"></script>
+    <script src="wasm_exec.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="editor-container">
+        <div class="editor-buttons">
+          <select id="code-snippets">
+            <option value="">Select a snippet</option>
+          </select>
+          <button id="compile-code">Compile</button>
+          <button id="toggle-vim">Toggle Vim Mode</button>
+        </div>
+        <div class="editor" id="editor"></div>
+      </div>
+      <div class="resizer" id="resizer"></div>
+      <div class="output-container">
+        <div class="tabs">
+          <button id="tab-lex" class="tab">Tokens</button>
+          <button id="tab-ast" class="tab active">AST</button>
+          <button id="tab-wat" class="tab">wat</button>
+          <button id="tab-js" class="tab">JavaScript</button>
+        </div>
+        <div>
+          <div id="output" style="padding-top: 1rem"></div>
+          <div id="js-console" style="display: none">
+            <button id="run-js">Run</button>
+            <button id="clear-console">Clear</button>
+            <pre id="console-output"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="index.js"></script>
+  </body>
+</html>
