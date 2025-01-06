@@ -235,9 +235,6 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 				return nil, err
 			}
 			p.trace("parsed identifier functioncall expression", p.curToken.Literal, p.peekToken.Literal)
-			if p.curTokenIs(token.RPAREN) {
-				p.nextToken()
-			}
 			return fnCall, nil
 		}
 

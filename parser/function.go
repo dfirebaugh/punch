@@ -129,6 +129,7 @@ func (p *Parser) parseFunctionCall(function ast.Expression) (ast.Expression, err
 	exp.Arguments, err = p.parseFunctionCallArguments()
 
 	p.trace("parsed function call after args", p.curToken.Literal, p.peekToken.Literal)
+
 	return exp, err
 }
 
@@ -141,10 +142,10 @@ func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 	}
 
 	if p.curTokenIs(token.RPAREN) {
-		p.nextToken() // consume the closing parenthesis
 		return args, nil
 	}
 
+	p.trace("parseFunctionCallArguments before parse expression", p.curToken.Literal, p.peekToken.Literal)
 	firstArg, err := p.parseExpression(LOWEST)
 	if err != nil {
 		return nil, err

@@ -177,7 +177,7 @@ func (p *Parser) parseVariableDeclarationOrAssignment() (ast.Statement, error) {
 		return nil, p.error("expected '=' after identifier")
 	}
 
-	p.nextToken()
+	p.nextToken() // consume assign operator
 	value, err := p.parseExpression(LOWEST)
 	if err != nil {
 		return nil, err
@@ -511,12 +511,6 @@ func (p *Parser) parseForStatement() (*ast.ForStatement, error) {
 	}
 
 	p.trace("current token", p.curToken.Literal)
-
-	if !p.curTokenIs(token.SEMICOLON) {
-		return nil, p.error("expected ';' after for-init statement")
-	}
-	// Consume the ';'
-	p.nextToken()
 
 	p.trace("current token", p.curToken.Literal)
 	if !p.curTokenIs(token.SEMICOLON) {
