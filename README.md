@@ -127,10 +127,10 @@ fn main() {
 | strings | ✅ | ✅ | ✅ |
 | integers | ✅ | ✅ | ✅ |
 | floats | ✅ |  ✅ | ❌ |
-| structs | ✅ | ✅ | ✅ |
+| structs | ✅ | ❌ | ✅ |
 | struct access | ✅ | ❌ | ✅ |
 | loops | ✅ | ❌ | ✅ |
-| lists | ❌ | ❌ | ❌ |
+| lists | ✅ | ❌ | ✅ |
 | maps | ❌ | ❌ | ❌ |
 | pointers | ❌ | ❌ | ❌ |
 | enums | ❌ | ❌ | ❌ |
