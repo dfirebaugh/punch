@@ -86,6 +86,8 @@ const (
 	TEST      = "test"
 	ENUM      = "enum"
 	DEFER     = "defer"
+	APPEND    = "append"
+	LEN       = "len"
 
 	IDENTIFIER = "IDENTIFIER"
 
@@ -126,4 +128,6 @@ var Keywords = map[Type]string{
 	FALSE:     "false",
 	PUB:       "pub",
 	STRING:    "str",
+	APPEND:    "append",
+	LEN:       "len",
 }

@@ -19,18 +19,22 @@ func main() {
 	var outputJS bool
 	var outputAst bool
 	var showHelp bool
+	var logLevel string
 
 	flag.StringVar(&outputFile, "o", "", "output file (default: <input_filename>.wasm)")
 	flag.BoolVar(&outputTokens, "tokens", false, "output tokens")
 	flag.BoolVar(&outputAst, "ast", false, "output Abstract Syntax Tree (AST) file")
 	flag.BoolVar(&outputJS, "js", false, "outputs js to stdout")
 	flag.BoolVar(&showHelp, "help", false, "show help message")
+	flag.StringVar(&logLevel, "log", "error", "set log level (options: trace, debug, info, warn, error, fatal, panic)")
 	flag.Parse()
 
 	if showHelp {
 		printUsage()
 		os.Exit(0)
 	}
+
+	setLogLevel(logLevel)
 
 	if flag.NArg() < 1 {
 		printUsage()
@@ -121,8 +125,29 @@ func main() {
 	}
 }
 
+func setLogLevel(level string) {
+	switch level {
+	case "trace":
+		logrus.SetLevel(logrus.TraceLevel)
+	case "debug":
+		logrus.SetLevel(logrus.DebugLevel)
+	case "info":
+		logrus.SetLevel(logrus.InfoLevel)
+	case "warn":
+		logrus.SetLevel(logrus.WarnLevel)
+	case "error":
+		logrus.SetLevel(logrus.ErrorLevel)
+	case "fatal":
+		logrus.SetLevel(logrus.FatalLevel)
+	case "panic":
+		logrus.SetLevel(logrus.PanicLevel)
+	default:
+		logrus.SetLevel(logrus.ErrorLevel)
+	}
+}
+
 func printUsage() {
-	fmt.Println("Usage:", os.Args[0], "[-o output_file] [--tokens] [--wat] [--ast] [--js] <filename>")
+	fmt.Println("Usage:", os.Args[0], "[-o output_file] [--tokens] [--wat] [--ast] [--js] [--log log_level] <filename>")
 	fmt.Println("Options:")
 	fmt.Println("  -o string")
 	fmt.Println("        output file (default: <input_filename>.wasm)")
@@ -132,6 +157,8 @@ func printUsage() {
 	fmt.Println("        output Abstract Syntax Tree (AST) file")
 	fmt.Println("  --js")
 	fmt.Println("        output Javascript to stdout")
+	fmt.Println("  --log string")
+	fmt.Println("        set log level (options: trace, debug, info, warn, error, fatal, panic)")
 	fmt.Println("  --help")
 	fmt.Println("        show help message")
 }

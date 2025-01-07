@@ -10,6 +10,7 @@ import (
 	"github.com/dfirebaugh/punch/lexer"
 	"github.com/dfirebaugh/punch/parser"
 	"github.com/dfirebaugh/punch/token"
+	"github.com/sirupsen/logrus"
 )
 
 func parse(this js.Value, p []js.Value) interface{} {
@@ -70,7 +71,10 @@ func generateWAT(this js.Value, p []js.Value) interface{} {
 	source := p[0].String()
 	l := lexer.New("example", source)
 	parser := parser.New(l)
-	program := parser.ParseProgram("ast_explorer")
+	program, err := parser.ParseProgram("ast_explorer")
+	if err != nil {
+		logrus.Error(err)
+	}
 
 	watCode := wat.GenerateWAT(program, true)
 	return watCode
@@ -85,7 +89,10 @@ func generateJS(this js.Value, p []js.Value) interface{} {
 	source := p[0].String()
 	l := lexer.New("example", source)
 	parser := parser.New(l)
-	program := parser.ParseProgram("ast_explorer")
+	program, err := parser.ParseProgram("ast_explorer")
+	if err != nil {
+		logrus.Error(err)
+	}
 
 	t := js_gen.NewTranspiler()
 	jsCode, err := t.Transpile(program)

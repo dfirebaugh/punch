@@ -101,6 +101,9 @@ func (t *Transpiler) transpileStatement(stmt ast.Statement) string {
 	case *ast.ForStatement:
 		return t.transpileForStatement(stmt)
 
+	case *ast.ListDeclaration:
+		return t.transpileListDeclaration(stmt)
+
 	default:
 		return JSUnsupported + " statement"
 	}
@@ -166,6 +169,9 @@ func (t *Transpiler) transpileExpression(expr ast.Expression) string {
 
 	case *ast.StructFieldAccess:
 		return t.transpileStructFieldAccess(expr)
+
+	case *ast.ListLiteral:
+		return t.transpileListLiteral(expr)
 
 	default:
 		return JSUnsupported + " expression"
@@ -238,6 +244,14 @@ func (t *Transpiler) transpileFunctionCall(expr *ast.FunctionCall) string {
 
 	if expr.Function.String() == "println" {
 		out.WriteString(JSConsoleLog + "(")
+	} else if expr.Function.String() == "len" && len(expr.Arguments) == 1 {
+		out.WriteString(t.transpileExpression(expr.Arguments[0]) + ".length")
+		return out.String()
+	} else if expr.Function.String() == "append" && len(expr.Arguments) == 2 {
+		out.WriteString(t.transpileExpression(expr.Arguments[0]) + ".push(")
+		out.WriteString(t.transpileExpression(expr.Arguments[1]))
+		out.WriteString(")")
+		return out.String()
 	} else {
 		out.WriteString(expr.Function.String() + "(")
 	}
@@ -397,5 +411,31 @@ func (t *Transpiler) transpileForStatement(stmt *ast.ForStatement) string {
 
 	out.WriteString(") ")
 	out.WriteString(t.transpileBlockStatement(stmt.Body))
+	return out.String()
+}
+
+func (t *Transpiler) transpileListLiteral(expr *ast.ListLiteral) string {
+	var out bytes.Buffer
+
+	out.WriteString("[")
+	elements := []string{}
+	for _, el := range expr.Elements {
+		elements = append(elements, t.transpileExpression(el))
+	}
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
+func (t *Transpiler) transpileListDeclaration(stmt *ast.ListDeclaration) string {
+	var out bytes.Buffer
+
+	out.WriteString(JSLet + " ")
+	out.WriteString(stmt.Name.String())
+	out.WriteString(" = ")
+	out.WriteString(t.transpileListLiteral(stmt.Value))
+	out.WriteString(";")
+
 	return out.String()
 }

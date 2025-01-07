@@ -85,6 +85,9 @@ func (p *Parser) registerParseRules() {
 		token.GT:         {infixFn: p.parseInfixExpression},
 		token.AND:        {infixFn: p.parseInfixExpression},
 		token.OR:         {infixFn: p.parseInfixExpression},
+		// token.LBRACKET:   {prefixFn: p.parseListLiteral},
+		token.APPEND: {prefixFn: p.parseListOperation},
+		token.LEN:    {prefixFn: p.parseListOperation},
 	}
 	numberTypes := []token.Type{
 		token.U8, token.U16, token.U32, token.U64,
@@ -110,25 +113,13 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 	var err error
 	p.trace("parseExpression", p.curToken.Literal, p.peekToken.Literal)
 
-	if p.curToken.Literal == token.TRUE || p.curToken.Literal == token.FALSE {
+	if p.isBooleanLiteral() {
 		p.trace("parsing bool", p.curToken.Literal, p.peekToken.Literal)
 		b, err := p.parseBooleanLiteral()
 		if err != nil {
 			return nil, err
 		}
-		if p.peekToken.Type == token.MINUS ||
-			p.peekToken.Type == token.PLUS ||
-			p.peekToken.Type == token.ASTERISK ||
-			p.peekToken.Type == token.SLASH ||
-			p.peekToken.Type == token.MOD ||
-			p.peekToken.Type == token.EQ ||
-			p.peekToken.Type == token.NOT_EQ ||
-			p.peekToken.Type == token.LT ||
-			p.peekToken.Type == token.LT_EQUALS ||
-			p.peekToken.Type == token.GT_EQUALS ||
-			p.peekToken.Type == token.GT ||
-			p.peekToken.Type == token.AND ||
-			p.peekToken.Type == token.OR {
+		if p.isBinaryOperator() {
 			p.trace("parsing infixed expression", p.curToken.Literal, p.peekToken.Literal)
 			p.nextToken()
 			return p.parseInfixExpression(b)
@@ -138,10 +129,11 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 	}
 
 	if p.curTokenIs(token.STRING) {
+		p.trace("parseExpression - parsing string literal:", p.curToken.Literal)
 		return p.parseStringLiteral()
 	}
 
-	if p.curTokenIs(token.NUMBER) || p.curTokenIs(token.FLOAT) {
+	if p.isNumber() {
 		p.trace("parsing number", p.curToken.Literal, p.peekToken.Literal)
 		var n ast.Expression
 		if p.curTokenIs(token.NUMBER) {
@@ -160,19 +152,7 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 		if n == nil {
 			return nil, p.error("could not parse number")
 		}
-		if p.peekToken.Type == token.MINUS ||
-			p.peekToken.Type == token.PLUS ||
-			p.peekToken.Type == token.ASTERISK ||
-			p.peekToken.Type == token.SLASH ||
-			p.peekToken.Type == token.MOD ||
-			p.peekToken.Type == token.EQ ||
-			p.peekToken.Type == token.NOT_EQ ||
-			p.peekToken.Type == token.LT ||
-			p.peekToken.Type == token.GT ||
-			p.peekToken.Type == token.LT_EQUALS ||
-			p.peekToken.Type == token.GT_EQUALS ||
-			p.peekToken.Type == token.AND ||
-			p.peekToken.Type == token.OR {
+		if p.isBinaryOperator() {
 			p.trace("parsing infixed expression", p.curToken.Literal, p.peekToken.Literal)
 			p.nextToken()
 			return p.parseInfixExpression(n)
@@ -181,20 +161,18 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 		return n, nil
 	}
 
+	if p.isIndexExpression() {
+		ident, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		if ident == nil {
+			return nil, p.error("identifier is nil")
+		}
+		return p.parseIndexExpression(ident)
+	}
 	if p.curToken.Type == token.IDENTIFIER {
-		if p.peekToken.Type == token.MINUS ||
-			p.peekToken.Type == token.PLUS ||
-			p.peekToken.Type == token.ASTERISK ||
-			p.peekToken.Type == token.SLASH ||
-			p.peekToken.Type == token.MOD ||
-			p.peekToken.Type == token.EQ ||
-			p.peekToken.Type == token.NOT_EQ ||
-			p.peekToken.Type == token.LT ||
-			p.peekToken.Type == token.GT ||
-			p.peekToken.Type == token.LT_EQUALS ||
-			p.peekToken.Type == token.GT_EQUALS ||
-			p.peekToken.Type == token.AND ||
-			p.peekToken.Type == token.OR {
+		if p.isBinaryOperator() {
 			p.trace("parsing identifier infix expression", p.curToken.Literal, p.peekToken.Literal)
 			ident, err := p.parseIdentifier()
 			if err != nil {
@@ -206,7 +184,7 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 			p.nextToken()
 			return p.parseInfixExpression(ident)
 		}
-		if p.peekToken.Type == token.ASSIGN || p.peekToken.Type == token.INFER {
+		if p.isAssignmentExpression() {
 			ident, err := p.parseIdentifier()
 			if err != nil {
 				return nil, err
@@ -218,10 +196,10 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 			return p.parseAssignmentExpression(ident)
 		}
 
-		if p.peekTokenIs(token.LBRACE) && !p.isInControlStatement() {
+		if p.isStructLiteral() {
 			return p.parseStructLiteral()
 		}
-		if p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LPAREN) {
+		if p.isFunctionCall() {
 			p.trace("parsing identifier functioncall expression", p.curToken.Literal, p.peekToken.Literal)
 			ident, err := p.parseIdentifier()
 			if err != nil {
@@ -285,40 +263,4 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
-}
-
-// expectPeek checks if the next token is of the expected type.
-func (p *Parser) expectPeek(expectedType token.Type) bool {
-	return p.peekTokenIs(expectedType)
-}
-
-func (p *Parser) expectCurrentTokenIs(expectedType token.Type) bool {
-	return p.curTokenIs(expectedType)
-}
-
-// peekTokenAfter checks if the token after the expectedType token is of a specific type.
-// It temporarily advances the parser to check the token and then restores the parser's state.
-func (p *Parser) peekTokenAfter(expectedType token.Type) bool {
-	curToken := p.curToken
-	peekToken := p.peekToken
-	p.l.SaveState()
-
-	p.nextToken()
-	result := p.peekToken.Type == expectedType
-
-	p.curToken = curToken
-	p.peekToken = peekToken
-
-	p.l.RestoreState()
-	return result
-}
-
-// curTokenIs checks if the current token is of the specified type.
-func (p *Parser) curTokenIs(t token.Type) bool {
-	return p.curToken.Type == t
-}
-
-// peekTokenIs checks if the peek token is of the specified type.
-func (p *Parser) peekTokenIs(t token.Type) bool {
-	return string(p.peekToken.Type) == string(t)
 }

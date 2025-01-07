@@ -1,0 +1,15 @@
+pkg main
+
+fn greet(str name) {
+    println("Hello,", name)
+}
+
+fn main() {
+    []str names = {"Alice", "Bob", "Charlie"}
+    append(names, "Alf")
+    for i = 0; i < len(names); i = i + 1 {
+        greet(names[i])
+    }
+}
+
+main()

@@ -109,32 +109,7 @@ func (c *CallExpression) String() string {
 	return out.String()
 }
 
-type IndexExpression struct {
-	Left  Expression
-	Index Expression
-}
 
-func (i *IndexExpression) expressionNode() {}
-
-func (i *IndexExpression) TokenLiteral() string {
-	if i == nil {
-		return ""
-	}
-	return "index"
-}
-
-func (i *IndexExpression) String() string {
-	if i == nil {
-		return ""
-	}
-	var out bytes.Buffer
-	out.WriteString("(")
-	out.WriteString(i.Left.String())
-	out.WriteString("[")
-	out.WriteString(i.Index.String())
-	out.WriteString("])")
-	return out.String()
-}
 
 type PrefixExpression struct {
 	Token    token.Token

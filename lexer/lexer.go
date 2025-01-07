@@ -248,6 +248,10 @@ func (l Lexer) evaluateSpecialCharacter(literal string) token.Type {
 		return token.BANG
 	case token.MOD:
 		return token.MOD
+	case token.LBRACKET:
+		return token.LBRACKET
+	case token.RBRACKET:
+		return token.RBRACKET
 	default:
 		return token.ILLEGAL
 	}

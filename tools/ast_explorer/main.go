@@ -108,7 +108,7 @@ func watHandler(w http.ResponseWriter, r *http.Request) {
 	l := lexer.New("example", requestBody.Source)
 	p := parser.New(l)
 
-	program := p.ParseProgram("ast_explorer")
+	program, _ := p.ParseProgram("ast_explorer")
 
 	watCode := wat.GenerateWAT(program, true)
 
@@ -140,7 +140,7 @@ func jsHandler(w http.ResponseWriter, r *http.Request) {
 	l := lexer.New("example", requestBody.Source)
 	p := parser.New(l)
 
-	program := p.ParseProgram("ast_explorer")
+	program, _ := p.ParseProgram("ast_explorer")
 
 	t := js.NewTranspiler()
 	jsCode, err := t.Transpile(program)

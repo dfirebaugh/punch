@@ -86,10 +86,11 @@ func (p *Parser) parseImports(file *ast.File) error {
 func (p *Parser) parseStatement() (ast.Statement, error) {
 	p.trace("parsing statement", p.curToken.Literal, p.peekToken.Literal)
 
-	if p.curTokenIs(token.PUB) && p.isTypeToken(p.peekToken) && p.peekTokenAfter(token.IDENTIFIER) || p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.LPAREN) {
+	if p.isFunctionDeclaration() {
 		return p.parseFunctionStatement()
 	}
-	if p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.ASSIGN) {
+
+	if p.isVariableDeclaration() {
 		p.trace("parsing variable declaration", p.curToken.Literal, p.peekToken.Literal)
 		s, err := p.parseTypeBasedVariableDeclaration()
 		if err != nil {
@@ -130,7 +131,13 @@ func (p *Parser) parseStatement() (ast.Statement, error) {
 		if p.peekTokenIs(token.ASSIGN) {
 			return p.parseVariableDeclarationOrAssignment()
 		}
+		if p.curTokenIs(token.LEN) {
+		}
 		return p.parseExpressionStatement()
+	case token.LBRACKET:
+		if p.peekTokenIs(token.RBRACKET) {
+		}
+		return p.parseListDeclaration()
 	default:
 		p.trace("parsing statement - default - expression statement", p.curToken.Literal, p.peekToken.Literal)
 		if p.curTokenIs(token.RBRACE) && p.peekTokenIs(token.EOF) {
@@ -138,27 +145,6 @@ func (p *Parser) parseStatement() (ast.Statement, error) {
 		}
 		return p.parseExpressionStatement()
 	}
-}
-
-func (p *Parser) isTypeToken(t token.Token) bool {
-	switch t.Type {
-	case token.STRING,
-		token.BOOL,
-		token.U8,
-		token.U16,
-		token.U32,
-		token.U64,
-		token.I8,
-		token.I16,
-		token.I32,
-		token.I64,
-		token.F32,
-		token.F64:
-		return true
-	}
-
-	_, exists := p.definedTypes[t.Literal]
-	return exists
 }
 
 func (p *Parser) parseVariableDeclarationOrAssignment() (ast.Statement, error) {
@@ -199,6 +185,12 @@ func (p *Parser) parseExpressionStatement() (*ast.ExpressionStatement, error) {
 	}
 	if stmt.Expression != nil {
 		p.trace("after parsing expression statement", stmt.Expression.String())
+		if p.curTokenIs(token.RPAREN) {
+			p.nextToken()
+		}
+		if p.curTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
 	}
 
 	return stmt, nil
@@ -211,7 +203,7 @@ func (p *Parser) parseNumberType() (ast.Expression, error) {
 	}
 	return &ast.IntegerLiteral{
 		Token: token.Token{
-			Type:     token.I64,
+			Type:     token.I32,
 			Literal:  p.curToken.Literal,
 			Position: p.curToken.Position,
 		},
@@ -261,7 +253,11 @@ func (p *Parser) parseStringLiteral() (ast.Expression, error) {
 	}
 
 	lit := &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
-	p.nextToken()
+	p.nextToken() // consume string literal
+	// if p.curTokenIs(token.COMMA) {
+	//   p.trace("after string literal -- consuming comma: ", p.curToken.Literal, p.peekToken.Literal)
+	//   p.nextToken() // consume comma
+	// }
 
 	return lit, nil
 }
@@ -342,10 +338,6 @@ func (p *Parser) parseIfStatement() (*ast.IfStatement, error) {
 	return stmt, nil
 }
 
-func (p *Parser) isInControlStatement() bool {
-	return p.controlDepth > 0
-}
-
 func (p *Parser) enterControlStatement() {
 	p.controlDepth++
 }
@@ -388,7 +380,7 @@ func (p *Parser) parseComment() {
 	case token.SLASH_ASTERISK:
 		p.nextToken()
 
-		for !(p.curTokenIs(token.ASTERISK) && p.peekTokenIs(token.SLASH)) {
+		for !p.curTokenIs(token.ASTERISK) || !p.peekTokenIs(token.SLASH) {
 			if p.curTokenIs(token.EOF) {
 				return
 			}
@@ -500,8 +492,9 @@ func (p *Parser) parseForStatement() (*ast.ForStatement, error) {
 
 	stmt := &ast.ForStatement{Token: p.curToken}
 
-	p.nextToken()
+	p.nextToken() // consume for
 
+	p.trace("parsing for loop init expression", p.curToken.Literal, p.peekToken.Literal)
 	stmt.Init, err = p.parseStatement()
 	if err != nil {
 		return nil, err
@@ -510,26 +503,31 @@ func (p *Parser) parseForStatement() (*ast.ForStatement, error) {
 		return nil, p.error("expected initialization statement in for loop")
 	}
 
-	p.trace("current token", p.curToken.Literal)
-
-	p.trace("current token", p.curToken.Literal)
-	if !p.curTokenIs(token.SEMICOLON) {
-		stmt.Condition, err = p.parseExpression(LOWEST)
-		if err != nil {
-			return nil, err
-		}
-		if stmt.Condition == nil {
-			return nil, p.error("expected condition expression in for loop")
-		}
+	if p.curTokenIs(token.SEMICOLON) {
+		p.trace("consume semi", p.curToken.Literal)
+		p.nextToken() // consume ;
 	}
 
 	p.trace("current token", p.curToken.Literal)
-	if !p.curTokenIs(token.SEMICOLON) {
-		return nil, p.error("expected ';' after for-loop condition")
+	p.trace("parsing for loop condition expression", p.curToken.Literal, p.peekToken.Literal)
+	stmt.Condition, err = p.parseExpression(LOWEST)
+	if err != nil {
+		return nil, err
 	}
-	// consume the second ';'
-	p.nextToken()
+	if stmt.Condition == nil {
+		return nil, p.error("expected condition expression in for loop")
+	}
 
+	if p.curTokenIs(token.RPAREN) { // might need to remove this
+		p.nextToken()
+	}
+
+	if p.curTokenIs(token.SEMICOLON) {
+		p.trace("consume semi", p.curToken.Literal)
+		p.nextToken() // consume ;
+	}
+
+	p.trace("parsing for loop condition post expression", p.curToken.Literal, p.peekToken.Literal)
 	if !p.curTokenIs(token.LBRACE) {
 		stmt.Post, err = p.parseStatement()
 		if err != nil {
@@ -537,18 +535,41 @@ func (p *Parser) parseForStatement() (*ast.ForStatement, error) {
 		}
 	}
 
-	if !p.curTokenIs(token.LBRACE) {
-		return nil, p.error("expected '{' after for loop post statement")
-	}
-
 	stmt.Body, err = p.parseBlockStatement()
 	if err != nil {
 		return nil, err
 	}
 
-	if !p.curTokenIs(token.LBRACE) {
+	if p.curTokenIs(token.RBRACE) {
+		p.trace("consuming right brace after for statement", p.curToken.Literal)
 		p.nextToken()
 	}
+	// if !p.curTokenIs(token.LBRACE) {
+	// 	p.nextToken()
+	// }
 
 	return stmt, nil
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) (ast.Expression, error) {
+	indexExp := &ast.IndexExpression{
+		Token: p.curToken,
+		Left:  left,
+	}
+
+	p.nextToken() // consume the identifier
+	p.nextToken() // consume '['
+
+	index, err := p.parseExpression(LOWEST)
+	if err != nil {
+		return nil, err
+	}
+	indexExp.Index = index
+
+	if !p.expectCurrentTokenIs(token.RBRACKET) {
+		return nil, p.error("expected ']' after index expression")
+	}
+	p.nextToken()
+
+	return indexExp, nil
 }

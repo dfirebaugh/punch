@@ -56,8 +56,10 @@ message get_message() {
       },
     },
   }
+  send_message()
   return msg
 }
 
-message msg = get_message()
-println(msg)
+//message msg = get_message()
+//println(msg)
+send_message()

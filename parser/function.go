@@ -57,6 +57,7 @@ func (p *Parser) parseFunctionStatement() (*ast.FunctionStatement, error) {
 		Body:       body,
 	}
 
+	p.trace("end of parsing function statement")
 	return stmt, nil
 }
 
@@ -125,7 +126,16 @@ func (p *Parser) parseFunctionCall(function ast.Expression) (ast.Expression, err
 		Token:        p.curToken,
 		Function:     function,
 	}
-	p.nextToken() // consume (
+	if p.curTokenIs(token.IDENTIFIER) {
+		p.nextToken()
+	}
+	if p.curTokenIs(token.LPAREN) {
+		p.nextToken() // consume (
+	}
+	if p.curTokenIs(token.RPAREN) {
+		p.nextToken()
+		return exp, err
+	}
 	exp.Arguments, err = p.parseFunctionCallArguments()
 
 	p.trace("parsed function call after args", p.curToken.Literal, p.peekToken.Literal)
@@ -155,11 +165,20 @@ func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 	}
 	p.trace("parseFunctionCallArguments: first arg", firstArg.String(), p.curToken.Literal, p.peekToken.Literal)
 	args = append(args, firstArg)
+  if !p.curTokenIs(token.COMMA) {
+    // println("not comma", p.curToken.Literal, p.peekToken.Literal)
+    if p.curTokenIs(token.RPAREN) {
+      p.nextToken()
+    }
+    return args, nil
+  }
 
 	for p.curTokenIs(token.COMMA) {
 		p.trace("parseFunctionCallArguments: consume COMMA", p.curToken.Literal, p.peekToken.Literal)
 		// consume the comma
-		p.nextToken()
+		if p.curTokenIs(token.COMMA) {
+			p.nextToken()
+		}
 
 		nextArg, err := p.parseExpression(LOWEST)
 		if err != nil {
@@ -173,6 +192,9 @@ func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 	}
 
 	p.trace("parseFunctionCallArguments: end", p.curToken.Literal, p.peekToken.Literal)
+	if p.curTokenIs(token.RPAREN) {
+		p.nextToken()
+	}
 	return args, nil
 }
 
