@@ -25,9 +25,9 @@ const (
 
 	// Literals
 	STRING = "STRING"
-	NUMBER = "number"
-	FLOAT  = "float"
-	BOOL   = "bool"
+	NUMBER = "NUMBER"
+	FLOAT  = "FLOAT"
+	BOOL   = "BOOL"
 
 	// Operators
 	ASSIGN          = "="
@@ -76,18 +76,18 @@ const (
 	LET       = "LET"
 	RETURN    = "RETURN"
 	FOR       = "FOR"
-	IF        = "if"
-	ELSE      = "else"
-	PUB       = "pub"
-	PACKAGE   = "pkg"
-	IMPORT    = "import"
-	INTERFACE = "interface"
-	STRUCT    = "struct"
-	TEST      = "test"
-	ENUM      = "enum"
-	DEFER     = "defer"
-	APPEND    = "append"
-	LEN       = "len"
+	IF        = "IF"
+	ELSE      = "ELSE"
+	PUB       = "PUB"
+	PACKAGE   = "PKG"
+	IMPORT    = "IMPORT"
+	INTERFACE = "INTERFACE"
+	STRUCT    = "STRUCT"
+	TEST      = "TEST"
+	ENUM      = "ENUM"
+	DEFER     = "DEFER"
+	APPEND    = "APPEND"
+	LEN       = "LEN"
 
 	IDENTIFIER = "IDENTIFIER"
 
@@ -127,6 +127,7 @@ var Keywords = map[Type]string{
 	TRUE:      "true",
 	FALSE:     "false",
 	PUB:       "pub",
+	BOOL:      "bool",
 	STRING:    "str",
 	APPEND:    "append",
 	LEN:       "len",

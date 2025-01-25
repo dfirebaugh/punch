@@ -56,10 +56,20 @@ message get_message() {
       },
     },
   }
+  msg.sender = msg.sender + 8;
+
   send_message()
+  println(msg.sender)
   return msg
 }
 
-//message msg = get_message()
-//println(msg)
-send_message()
+
+fn init() {
+  //message msg = get_message()
+  //println(msg)
+  get_message();
+  send_message();
+}
+
+init();
+

@@ -72,7 +72,7 @@ func (p *Parser) registerParseRules() {
 		token.FALSE:      {prefixFn: p.parseBooleanLiteral},
 		token.BANG:       {prefixFn: p.parsePrefixExpression},
 		token.ASSIGN:     {infixFn: p.parseAssignmentExpression},
-		token.MINUS:      {infixFn: p.parseInfixExpression},
+		token.MINUS:      {infixFn: p.parseInfixExpression, prefixFn: p.parsePrefixExpression},
 		token.PLUS:       {infixFn: p.parseInfixExpression},
 		token.ASTERISK:   {infixFn: p.parseInfixExpression},
 		token.MOD:        {infixFn: p.parseInfixExpression},
@@ -112,7 +112,6 @@ func (p *Parser) registerParseRules() {
 func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 	var err error
 	p.trace("parseExpression", p.curToken.Literal, p.peekToken.Literal)
-
 	if p.isBooleanLiteral() {
 		p.trace("parsing bool", p.curToken.Literal, p.peekToken.Literal)
 		b, err := p.parseBooleanLiteral()
@@ -157,7 +156,9 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 			p.nextToken()
 			return p.parseInfixExpression(n)
 		}
-		p.nextToken()
+		if p.curTokenIs(token.NUMBER) {
+			p.nextToken()
+		}
 		return n, nil
 	}
 
@@ -223,8 +224,7 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 		if ident == nil {
 			return nil, p.error("identifier is nil")
 		}
-
-		if p.peekTokenIs(token.DOT) {
+		if p.isStructAccess() {
 			return p.parseStructFieldAccess(ident.(*ast.Identifier))
 		}
 

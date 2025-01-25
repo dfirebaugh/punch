@@ -170,6 +170,9 @@ func (t *Transpiler) transpileExpression(expr ast.Expression) string {
 	case *ast.StructFieldAccess:
 		return t.transpileStructFieldAccess(expr)
 
+	case *ast.StructFieldAssignment:
+		return t.transpileStructFieldAssignment(expr)
+
 	case *ast.ListLiteral:
 		return t.transpileListLiteral(expr)
 
@@ -349,6 +352,14 @@ func (t *Transpiler) transpileStructFieldAccess(expr *ast.StructFieldAccess) str
 	return fmt.Sprintf("%s.%s",
 		t.transpileExpression(expr.Left),
 		expr.Field.String(),
+	)
+}
+
+func (t *Transpiler) transpileStructFieldAssignment(expr *ast.StructFieldAssignment) string {
+	return fmt.Sprintf("%s.%s = %s",
+		t.transpileExpression(expr.Left.Left),
+		expr.Left.Field.String(),
+		t.transpileExpression(expr.Right),
 	)
 }
 

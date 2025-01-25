@@ -303,12 +303,16 @@ func (l *Lexer) evaluateKeyword(literal string) token.Type {
 		return token.RETURN
 	case token.Keywords[token.IF]:
 		return token.IF
+	case token.Keywords[token.ELSE]:
+		return token.ELSE
 	case token.Keywords[token.TRUE]:
 		return token.TRUE
 	case token.Keywords[token.FOR]:
 		return token.FOR
 	case token.Keywords[token.FALSE]:
 		return token.FALSE
+	case token.Keywords[token.BOOL]:
+		return token.BOOL
 	case token.Keywords[token.PUB]:
 		return token.PUB
 	default:

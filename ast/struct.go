@@ -101,3 +101,23 @@ func (s *StructFieldAccess) TokenLiteral() string {
 func (s *StructFieldAccess) String() string {
 	return s.Left.String() + "." + s.Field.String()
 }
+
+type StructFieldAssignment struct {
+	Token token.Token
+	Left  *StructFieldAccess
+	Right Expression
+}
+
+func (sfa *StructFieldAssignment) expressionNode() {}
+
+func (sfa *StructFieldAssignment) TokenLiteral() string {
+	return sfa.Token.Literal
+}
+
+func (sfa *StructFieldAssignment) String() string {
+	var out bytes.Buffer
+	out.WriteString(sfa.Left.String())
+	out.WriteString(" = ")
+	out.WriteString(sfa.Right.String())
+	return out.String()
+}

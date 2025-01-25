@@ -108,5 +108,9 @@ func (p *Parser) isNumber() bool {
 }
 
 func (p *Parser) isIndexExpression() bool {
-  return p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LBRACKET)
+	return p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LBRACKET)
+}
+
+func (p *Parser) isStructAccess() bool {
+	return p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.DOT) && p.peekTokenAfter(token.IDENTIFIER)
 }

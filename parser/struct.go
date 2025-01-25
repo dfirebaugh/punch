@@ -137,6 +137,9 @@ func (p *Parser) parseStructLiteral() (ast.Expression, error) {
 }
 
 func (p *Parser) parseStructFieldAccess(left ast.Expression) (ast.Expression, error) {
+	if !p.expectCurrentTokenIs(token.DOT) {
+		p.error("expected a dot, but got: ", p.curToken.Literal)
+	}
 	p.nextToken() // consume the dot
 
 	if !p.expectPeek(token.IDENTIFIER) {
@@ -154,6 +157,34 @@ func (p *Parser) parseStructFieldAccess(left ast.Expression) (ast.Expression, er
 	if p.peekTokenIs(token.DOT) {
 		return p.parseStructFieldAccess(fieldAccess)
 	}
+	if p.isBinaryOperator() {
+		p.nextToken()
+		return p.parseInfixExpression(fieldAccess)
+	}
 
 	return fieldAccess, nil
+}
+
+func (p *Parser) parseStructFieldAssignment(left ast.Expression) (ast.Expression, error) {
+	tok := p.curToken
+	if !p.curTokenIs(token.ASSIGN) {
+		p.error("we were expecting an assignment operator, but got: ", p.curToken.Literal)
+	}
+	p.nextToken()
+
+	right, err := p.parseExpression(LOWEST)
+	if err != nil {
+		return nil, p.error("expected expression after assignment operator")
+	}
+
+	fieldAccess, ok := left.(*ast.StructFieldAccess)
+	if !ok {
+		return nil, p.error("left-hand side of assignment must be a struct field access")
+	}
+
+	return &ast.StructFieldAssignment{
+		Token: tok,
+		Left:  fieldAccess,
+		Right: right,
+	}, nil
 }

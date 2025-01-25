@@ -185,12 +185,20 @@ func (p *Parser) parseExpressionStatement() (*ast.ExpressionStatement, error) {
 	}
 	if stmt.Expression != nil {
 		p.trace("after parsing expression statement", stmt.Expression.String())
+		if p.curTokenIs(token.ASSIGN) {
+			assignment, err := p.parseStructFieldAssignment(stmt.Expression)
+			if err != nil {
+				p.error(err.Error())
+			}
+			stmt.Expression = assignment
+		}
 		if p.curTokenIs(token.RPAREN) {
 			p.nextToken()
 		}
 		if p.curTokenIs(token.SEMICOLON) {
 			p.nextToken()
 		}
+		return stmt, nil
 	}
 
 	return stmt, nil
@@ -289,6 +297,8 @@ func (p *Parser) parseInfixExpression(left ast.Expression) (ast.Expression, erro
 	}
 
 	precedence := p.curPrecedence()
+
+	// consume the operator
 	p.nextToken()
 	expression.Right, err = p.parseExpression(precedence)
 	return expression, err
@@ -318,7 +328,10 @@ func (p *Parser) parseIfStatement() (*ast.IfStatement, error) {
 		return nil, err
 	}
 	p.trace("parsing if statement", p.curToken.Literal, p.peekToken.Literal)
+	p.trace("parsing else block")
+
 	if p.peekTokenIs(token.ELSE) {
+		p.nextToken() // consume }
 		p.nextToken() // consume else
 
 		if !p.expectCurrentTokenIs(token.LBRACE) {
@@ -424,6 +437,9 @@ func (p *Parser) parseAssignmentExpression(left ast.Expression) (ast.Expression,
 
 	p.nextToken()
 	expression.Right, err = p.parseExpression(LOWEST)
+	if err != nil {
+		return nil, err
+	}
 
 	return expression, err
 }
@@ -449,6 +465,7 @@ func (p *Parser) parseTypeBasedVariableDeclaration() (ast.Statement, error) {
 		return decl, nil
 	}
 	varType := p.curToken
+	// if not an identifier, it could be a struct member
 	if !p.expectPeek(token.IDENTIFIER) {
 		return nil, p.error("expected identifier")
 	}

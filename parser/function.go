@@ -165,13 +165,13 @@ func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 	}
 	p.trace("parseFunctionCallArguments: first arg", firstArg.String(), p.curToken.Literal, p.peekToken.Literal)
 	args = append(args, firstArg)
-  if !p.curTokenIs(token.COMMA) {
-    // println("not comma", p.curToken.Literal, p.peekToken.Literal)
-    if p.curTokenIs(token.RPAREN) {
-      p.nextToken()
-    }
-    return args, nil
-  }
+	if !p.curTokenIs(token.COMMA) {
+		// println("not comma", p.curToken.Literal, p.peekToken.Literal)
+		if p.curTokenIs(token.RPAREN) {
+			p.nextToken()
+		}
+		return args, nil
+	}
 
 	for p.curTokenIs(token.COMMA) {
 		p.trace("parseFunctionCallArguments: consume COMMA", p.curToken.Literal, p.peekToken.Literal)
