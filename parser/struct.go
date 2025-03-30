@@ -157,7 +157,7 @@ func (p *Parser) parseStructFieldAccess(left ast.Expression) (ast.Expression, er
 	if p.peekTokenIs(token.DOT) {
 		return p.parseStructFieldAccess(fieldAccess)
 	}
-	if p.isBinaryOperator() {
+	if p.isBinaryOperator(p.peekToken) {
 		p.nextToken()
 		return p.parseInfixExpression(fieldAccess)
 	}

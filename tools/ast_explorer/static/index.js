@@ -216,16 +216,16 @@ document.addEventListener("DOMContentLoaded", () => {
               outputElementLex.innerHTML = `<pre>${tokens}</pre>`;
               break;
             case "wat":
-              const watCode = generateWAT(source);
-              const outputElementWat = document.getElementById("output");
-              outputElementWat.innerHTML = "";
-              const watEditor = CodeMirror(outputElementWat, {
-                value: watCode,
-                mode: "wat",
-                lineNumbers: true,
-                theme: "dracula",
-                readOnly: true,
-              });
+              //const watCode = generateWAT(source);
+              //const outputElementWat = document.getElementById("output");
+              //outputElementWat.innerHTML = "";
+              //const watEditor = CodeMirror(outputElementWat, {
+              //  value: watCode,
+              //  mode: "wat",
+              //  lineNumbers: true,
+              //  theme: "dracula",
+              //  readOnly: true,
+              //});
               break;
             case "js":
               const jsCode = generateJS(source);

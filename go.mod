@@ -1,6 +1,6 @@
 module github.com/dfirebaugh/punch
 
-go 1.20
+go 1.24
 
 require (
 	github.com/chzyer/readline v1.5.1

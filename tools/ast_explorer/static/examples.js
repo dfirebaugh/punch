@@ -47,6 +47,21 @@ pub fn math_operations() {
 
 math_operations()
   `.trim(),
+  fib: `
+pkg main
+
+i32 fibonacci(i32 n) {
+    if n == 0 {
+        return 0
+    }
+    if n == 1 {
+        return 1
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+println("Fibonacci(10) is {}", fibonacci(10))
+`,
   loop: `
 pkg main
 

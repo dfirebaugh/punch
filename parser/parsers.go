@@ -138,6 +138,9 @@ func (p *Parser) parseStatement() (ast.Statement, error) {
 		if p.peekTokenIs(token.RBRACKET) {
 		}
 		return p.parseListDeclaration()
+	case token.PLUS:
+		p.trace("parsing statement - possible infix plus", p.curToken.Literal, p.peekToken.Literal)
+		return p.parseExpressionStatement()
 	default:
 		p.trace("parsing statement - default - expression statement", p.curToken.Literal, p.peekToken.Literal)
 		if p.curTokenIs(token.RBRACE) && p.peekTokenIs(token.EOF) {
@@ -301,7 +304,11 @@ func (p *Parser) parseInfixExpression(left ast.Expression) (ast.Expression, erro
 	// consume the operator
 	p.nextToken()
 	expression.Right, err = p.parseExpression(precedence)
-	return expression, err
+	if err != nil {
+		return nil, err
+	}
+
+	return expression, nil
 }
 
 func (p *Parser) parseIfStatement() (*ast.IfStatement, error) {

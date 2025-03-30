@@ -109,8 +109,6 @@ func (c *CallExpression) String() string {
 	return out.String()
 }
 
-
-
 type PrefixExpression struct {
 	Token    token.Token
 	Operator token.Token

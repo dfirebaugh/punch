@@ -75,20 +75,20 @@ func (p *Parser) isBooleanLiteral() bool {
 	return p.curToken.Literal == token.TRUE || p.curToken.Literal == token.FALSE
 }
 
-func (p *Parser) isBinaryOperator() bool {
-	return p.peekToken.Type == token.MINUS ||
-		p.peekToken.Type == token.PLUS ||
-		p.peekToken.Type == token.ASTERISK ||
-		p.peekToken.Type == token.SLASH ||
-		p.peekToken.Type == token.MOD ||
-		p.peekToken.Type == token.EQ ||
-		p.peekToken.Type == token.NOT_EQ ||
-		p.peekToken.Type == token.LT ||
-		p.peekToken.Type == token.GT ||
-		p.peekToken.Type == token.LT_EQUALS ||
-		p.peekToken.Type == token.GT_EQUALS ||
-		p.peekToken.Type == token.AND ||
-		p.peekToken.Type == token.OR
+func (p *Parser) isBinaryOperator(t token.Token) bool {
+	return t.Type == token.MINUS ||
+		t.Type == token.PLUS ||
+		t.Type == token.ASTERISK ||
+		t.Type == token.SLASH ||
+		t.Type == token.MOD ||
+		t.Type == token.EQ ||
+		t.Type == token.NOT_EQ ||
+		t.Type == token.LT ||
+		t.Type == token.GT ||
+		t.Type == token.LT_EQUALS ||
+		t.Type == token.GT_EQUALS ||
+		t.Type == token.AND ||
+		t.Type == token.OR
 }
 
 func (p *Parser) isStructLiteral() bool {

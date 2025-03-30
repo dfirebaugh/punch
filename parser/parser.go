@@ -73,7 +73,7 @@ func (p *Parser) registerParseRules() {
 		token.BANG:       {prefixFn: p.parsePrefixExpression},
 		token.ASSIGN:     {infixFn: p.parseAssignmentExpression},
 		token.MINUS:      {infixFn: p.parseInfixExpression, prefixFn: p.parsePrefixExpression},
-		token.PLUS:       {infixFn: p.parseInfixExpression},
+		token.PLUS:       {infixFn: p.parseInfixExpression, prefixFn: p.parsePrefixExpression},
 		token.ASTERISK:   {infixFn: p.parseInfixExpression},
 		token.MOD:        {infixFn: p.parseInfixExpression},
 		token.SLASH:      {infixFn: p.parseInfixExpression},
@@ -88,6 +88,7 @@ func (p *Parser) registerParseRules() {
 		// token.LBRACKET:   {prefixFn: p.parseListLiteral},
 		token.APPEND: {prefixFn: p.parseListOperation},
 		token.LEN:    {prefixFn: p.parseListOperation},
+		token.LPAREN: {infixFn: p.parseFunctionCall},
 	}
 	numberTypes := []token.Type{
 		token.U8, token.U16, token.U32, token.U64,
@@ -118,7 +119,7 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		if p.isBinaryOperator() {
+		if p.isBinaryOperator(p.peekToken) {
 			p.trace("parsing infixed expression", p.curToken.Literal, p.peekToken.Literal)
 			p.nextToken()
 			return p.parseInfixExpression(b)
@@ -151,7 +152,7 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 		if n == nil {
 			return nil, p.error("could not parse number")
 		}
-		if p.isBinaryOperator() {
+		if p.isBinaryOperator(p.peekToken) {
 			p.trace("parsing infixed expression", p.curToken.Literal, p.peekToken.Literal)
 			p.nextToken()
 			return p.parseInfixExpression(n)
@@ -173,7 +174,7 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 		return p.parseIndexExpression(ident)
 	}
 	if p.curToken.Type == token.IDENTIFIER {
-		if p.isBinaryOperator() {
+		if p.isBinaryOperator(p.peekToken) {
 			p.trace("parsing identifier infix expression", p.curToken.Literal, p.peekToken.Literal)
 			ident, err := p.parseIdentifier()
 			if err != nil {
@@ -214,6 +215,11 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 				return nil, err
 			}
 			p.trace("parsed identifier functioncall expression", p.curToken.Literal, p.peekToken.Literal)
+
+			if p.isBinaryOperator(p.curToken) {
+				p.trace("parsed identifier functioncall expression - is binary operator", p.curToken.Literal, p.peekToken.Literal)
+				return p.parseInfixExpression(fnCall)
+			}
 			return fnCall, nil
 		}
 

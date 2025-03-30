@@ -201,48 +201,27 @@ func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 func (p *Parser) parseReturnStatement() (*ast.ReturnStatement, error) {
 	p.trace("parsing return statement", p.curToken.Literal)
 	stmt := &ast.ReturnStatement{Token: p.curToken}
-	if p.curTokenIs(token.RETURN) {
-		p.nextToken()
+
+	p.nextToken() // consume 'return' keyword
+
+	if p.curTokenIs(token.SEMICOLON) || p.curTokenIs(token.RBRACE) {
+		p.nextToken() // consume semicolon if present
+		return stmt, nil
 	}
-	p.trace("after return keyword", p.curToken.Literal, string(p.curToken.Type))
 
-	if p.peekTokenAfter(token.COMMA) || p.peekTokenIs(token.COMMA) {
-		if p.peekTokenAfter(token.COMMA) && p.curTokenIs(token.LPAREN) {
-			p.nextToken()
-		}
+	expr, err := p.parseExpression(LOWEST)
+	if err != nil {
+		return nil, err
+	}
 
-		for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
-			expr, err := p.parseExpression(LOWEST)
-			if err != nil {
-				return nil, err
-			}
-			if expr == nil {
-				return nil, p.error("expected expression in return statement")
-			}
-
-			stmt.ReturnValues = append(stmt.ReturnValues, expr)
-
-			if p.peekTokenIs(token.COMMA) {
-				p.nextToken()
-			}
-			p.nextToken()
-		}
-
+	if expr != nil {
+		p.trace("return expression parsed:", expr.String())
+		stmt.ReturnValues = append(stmt.ReturnValues, expr)
 	} else {
-		p.trace("parse return value", p.curToken.Literal, p.peekToken.Literal)
-		expr, err := p.parseExpression(LOWEST)
-		if err != nil {
-			return nil, err
-		}
-		p.trace("after parse return value", expr.String())
-		p.trace("return expression", expr.String())
-		if expr != nil {
-			stmt.ReturnValues = append(stmt.ReturnValues, expr)
-		} else {
-			return nil, p.error("expected expression after 'return'")
-		}
+		return nil, p.error("expected expression after 'return'")
 	}
-	if p.peekTokenIs(token.RBRACE) {
+
+	if p.curTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
