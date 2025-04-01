@@ -14,7 +14,7 @@ func (p *Parser) parseFunctionStatement() (*ast.FunctionStatement, error) {
 		p.nextToken()
 	}
 
-	if p.isTypeToken(p.curToken) {
+	if p.isTypeToken(p.curToken) || p.isStructType(p.curToken) {
 		returnType = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 		p.nextToken()
 	} else if p.curToken.Type == token.FUNCTION {

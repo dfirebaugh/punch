@@ -95,6 +95,10 @@ func (p *Parser) isStructLiteral() bool {
 	return p.peekTokenIs(token.LBRACE) && !p.isInControlStatement()
 }
 
+func (p *Parser) isIdentifier(t token.Type) bool {
+	return t == token.IDENTIFIER
+}
+
 func (p *Parser) isAssignmentExpression() bool {
 	return p.peekToken.Type == token.ASSIGN || p.peekToken.Type == token.INFER
 }
@@ -109,6 +113,11 @@ func (p *Parser) isNumber() bool {
 
 func (p *Parser) isIndexExpression() bool {
 	return p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LBRACKET)
+}
+
+func (p *Parser) isStructType(t token.Token) bool {
+	_, exists := p.structDefinitions[t.Literal]
+	return exists
 }
 
 func (p *Parser) isStructAccess() bool {

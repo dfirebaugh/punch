@@ -85,10 +85,10 @@ func (p *Parser) registerParseRules() {
 		token.GT:         {infixFn: p.parseInfixExpression},
 		token.AND:        {infixFn: p.parseInfixExpression},
 		token.OR:         {infixFn: p.parseInfixExpression},
-		// token.LBRACKET:   {prefixFn: p.parseListLiteral},
-		token.APPEND: {prefixFn: p.parseListOperation},
-		token.LEN:    {prefixFn: p.parseListOperation},
-		token.LPAREN: {infixFn: p.parseFunctionCall},
+		token.APPEND:     {prefixFn: p.parseListOperation},
+		token.LEN:        {prefixFn: p.parseListOperation},
+		token.LPAREN:     {infixFn: p.parseFunctionCall},
+		token.STRUCT:     {prefixFn: p.parseStructLiteral},
 	}
 	numberTypes := []token.Type{
 		token.U8, token.U16, token.U32, token.U64,
@@ -173,7 +173,7 @@ func (p *Parser) parseExpression(precedence int) (ast.Expression, error) {
 		}
 		return p.parseIndexExpression(ident)
 	}
-	if p.curToken.Type == token.IDENTIFIER {
+	if p.isIdentifier(p.curToken.Type) {
 		if p.isBinaryOperator(p.peekToken) {
 			p.trace("parsing identifier infix expression", p.curToken.Literal, p.peekToken.Literal)
 			ident, err := p.parseIdentifier()
