@@ -39,7 +39,7 @@ func (p *Parser) peekTokenIs(t token.Type) bool {
 }
 
 func (p *Parser) isFunctionDeclaration() bool {
-	return p.curTokenIs(token.PUB) && p.isTypeToken(p.peekToken) && p.peekTokenAfter(token.IDENTIFIER) || p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.LPAREN)
+	return p.curTokenIs(token.FN) || p.curTokenIs(token.PUB) && p.isTypeToken(p.peekToken) && p.peekTokenAfter(token.IDENTIFIER) || p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.LPAREN)
 }
 
 func (p *Parser) isVariableDeclaration() bool {

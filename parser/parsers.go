@@ -47,6 +47,9 @@ func (p *Parser) parseFile(filename string) (*ast.File, error) {
 	}
 
 	for !p.curTokenIs(token.EOF) {
+		if p.curTokenIs(token.SEMICOLON) || p.curTokenIs(token.RBRACE) {
+			p.nextToken()
+		}
 		stmt, err := p.parseStatement()
 		if err != nil {
 			return nil, err
@@ -54,7 +57,6 @@ func (p *Parser) parseFile(filename string) (*ast.File, error) {
 		if stmt != nil {
 			file.Statements = append(file.Statements, stmt)
 		}
-		p.nextToken()
 	}
 
 	return file, nil
@@ -87,6 +89,7 @@ func (p *Parser) parseStatement() (ast.Statement, error) {
 	p.trace("parsing statement", p.curToken.Literal, p.peekToken.Literal)
 
 	if p.isFunctionDeclaration() {
+		p.trace("parsing function declaration", p.curToken.Literal, p.peekToken.Literal)
 		return p.parseFunctionStatement()
 	}
 
@@ -166,7 +169,10 @@ func (p *Parser) parseVariableDeclarationOrAssignment() (ast.Statement, error) {
 		return nil, p.error("expected '=' after identifier")
 	}
 
-	p.nextToken() // consume assign operator
+	if p.curTokenIs(token.ASSIGN) {
+		p.nextToken() // consume assign operator
+	}
+
 	value, err := p.parseExpression(LOWEST)
 	if err != nil {
 		return nil, err
