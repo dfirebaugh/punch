@@ -155,8 +155,20 @@ func (ie *InfixExpression) String() string {
 	return out.String()
 }
 
+type PostfixExpression struct {
+	Token    token.Token
+	Operator string
+	Left     Expression
+}
+
+func (pe *PostfixExpression) expressionNode()      {}
+func (pe *PostfixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PostfixExpression) String() string {
+	return fmt.Sprintf("(%s%s)", pe.Left.String(), pe.Operator)
+}
+
 type Boolean struct {
-	Token token.Token // the token.Boolean token, either true or false
+	Token token.Token
 	Value bool
 }
 

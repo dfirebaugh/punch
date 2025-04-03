@@ -7,7 +7,9 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/dfirebaugh/punch/emitters/js"
+	"github.com/dfirebaugh/punch/codegen/js"
+	"github.com/dfirebaugh/punch/codegen/lua"
+	"github.com/dfirebaugh/punch/codegen/punchgen"
 	"github.com/dfirebaugh/punch/lexer"
 	"github.com/dfirebaugh/punch/parser"
 	"github.com/sirupsen/logrus"
@@ -16,17 +18,19 @@ import (
 func main() {
 	var outputFile string
 	var outputTokens bool
-	var outputJS bool
 	var outputAst bool
+	var genFormat string
 	var showHelp bool
 	var logLevel string
+	var formatCode bool
 
 	flag.StringVar(&outputFile, "o", "", "output file (default: <input_filename>.wasm)")
 	flag.BoolVar(&outputTokens, "tokens", false, "output tokens")
 	flag.BoolVar(&outputAst, "ast", false, "output Abstract Syntax Tree (AST) file")
-	flag.BoolVar(&outputJS, "js", false, "outputs js to stdout")
+	flag.StringVar(&genFormat, "gen", "", "generate code in specified format (options: js, asm, lua, punch)")
 	flag.BoolVar(&showHelp, "help", false, "show help message")
 	flag.StringVar(&logLevel, "log", "error", "set log level (options: trace, debug, info, warn, error, fatal, panic)")
+	flag.BoolVar(&formatCode, "format", false, "format the code")
 	flag.Parse()
 
 	if showHelp {
@@ -76,15 +80,61 @@ func main() {
 		fmt.Printf("%s\n", ast)
 	}
 
+	switch genFormat {
+	// case "asm":
+	// 	gen := asm.NewCodeGenerator()
+	// 	asmCode, err := gen.Generate(program)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 		return
+	// 	}
+	// 	fmt.Println(asmCode)
+	// 	return
+	case "js":
+		t := js.NewTranspiler()
+		jsCode, err := t.Transpile(program)
+		if err != nil {
+			log.Fatalf("error transpiling to js: %v", err)
+		}
+		fmt.Printf("%s\n", jsCode)
+		return
+	case "lua":
+		t := lua.NewTranspiler()
+		luaCode, err := t.Transpile(program)
+		if err != nil {
+			log.Fatalf("error transpiling to lua: %v", err)
+		}
+		fmt.Printf("%s\n", luaCode)
+		return
+	case "punch":
+		t := punchgen.NewGenerator()
+		punchCode, err := t.Generate(program)
+		if err != nil {
+			log.Fatalf("error generating punch code: %v", err)
+		}
+		fmt.Printf("%s\n", punchCode)
+		return
+	}
+
+	if formatCode {
+		t := punchgen.NewGenerator()
+		punchCode, err := t.Generate(program)
+		if err != nil {
+			log.Fatalf("error generating punch code: %v", err)
+		}
+		err = os.WriteFile(outputFile, []byte(punchCode), 0o644)
+		if err != nil {
+			log.Fatalf("error writing punch code to file: %v", err)
+		}
+		fmt.Printf("Punch code written to %s\n", outputFile)
+		return
+	}
+
+	// Default to JS if no specific output is requested for now
 	t := js.NewTranspiler()
 	jsCode, err := t.Transpile(program)
 	if err != nil {
 		log.Fatalf("error transpiling to js: %v", err)
-	}
-
-	if outputJS {
-		fmt.Printf("%s\n", jsCode)
-		return
 	}
 
 	bunPath, err := exec.LookPath("bun")
@@ -105,7 +155,9 @@ func main() {
 
 		go func() {
 			defer nodeStdin.Close()
-			nodeStdin.Write([]byte(jsCode))
+			if _, err := nodeStdin.Write([]byte(jsCode)); err != nil {
+				log.Fatalf("error writing js file: %s", err)
+			}
 		}()
 
 		err = cmd.Run()
@@ -147,7 +199,7 @@ func setLogLevel(level string) {
 }
 
 func printUsage() {
-	fmt.Println("Usage:", os.Args[0], "[-o output_file] [--tokens] [--wat] [--ast] [--js] [--log log_level] <filename>")
+	fmt.Println("Usage:", os.Args[0], "[-o output_file] [--tokens] [--ast] [--gen format] [--log log_level] <filename>")
 	fmt.Println("Options:")
 	fmt.Println("  -o string")
 	fmt.Println("        output file (default: <input_filename>.wasm)")
@@ -155,8 +207,8 @@ func printUsage() {
 	fmt.Println("        output tokens")
 	fmt.Println("  --ast")
 	fmt.Println("        output Abstract Syntax Tree (AST) file")
-	fmt.Println("  --js")
-	fmt.Println("        output Javascript to stdout")
+	fmt.Println("  --gen string")
+	fmt.Println("        generate code in specified format (options: js, asm, lua, punch)")
 	fmt.Println("  --log string")
 	fmt.Println("        set log level (options: trace, debug, info, warn, error, fatal, panic)")
 	fmt.Println("  --help")

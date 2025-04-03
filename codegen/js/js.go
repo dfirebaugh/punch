@@ -20,7 +20,7 @@ const (
 	JSNew            = "new"
 	JSExport         = "export"
 	JSConsoleLog     = "console.log"
-	JSUnsupported    = "// Unsupported"
+	JSUnsupported    = "// Not Supported"
 	JSFileComment    = "// File: %s\n"
 	JSPackageComment = "// Package: %s\n\n"
 )
@@ -115,7 +115,10 @@ func (t *Transpiler) transpileExpression(expr ast.Expression) string {
 		return expr.String()
 
 	case *ast.IntegerLiteral:
-		return expr.String()
+		return fmt.Sprintf("%d", expr.Value)
+
+	case *ast.FloatLiteral:
+		return fmt.Sprintf("%f", expr.Value)
 
 	case *ast.StringLiteral:
 		return fmt.Sprintf(`"%s"`, expr.String())

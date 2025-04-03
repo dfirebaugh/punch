@@ -10,7 +10,7 @@ import (
 type StructField struct {
 	Token token.Token
 	Name  *Identifier
-	Type  token.Type
+	Type  token.Token
 }
 
 func (sf *StructField) statementNode() {}
@@ -25,7 +25,7 @@ func (sf *StructField) String() string {
 		out.WriteString(sf.Name.String())
 	}
 	out.WriteString(" ")
-	out.WriteString(string(sf.Type))
+	out.WriteString(string(sf.Token.Type))
 	return out.String()
 }
 

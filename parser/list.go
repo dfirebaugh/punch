@@ -6,7 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (p *Parser) parseListLiteral() (ast.Expression, error) {
+func (p *parser) parseListLiteral() (ast.Expression, error) {
 	if p.curTokenIs(token.LBRACKET) && p.peekTokenIs(token.RBRACKET) && p.peekTokenAfter(token.IDENTIFIER) {
 		p.nextToken()
 		p.nextToken()
@@ -17,7 +17,7 @@ func (p *Parser) parseListLiteral() (ast.Expression, error) {
 	return list, nil
 }
 
-func (p *Parser) parseListOperation() (ast.Expression, error) {
+func (p *parser) parseListOperation() (ast.Expression, error) {
 	var err error
 	op := &ast.ListOperation{Token: p.curToken}
 	op.Operator = p.curToken.Literal
@@ -40,7 +40,7 @@ func (p *Parser) parseListOperation() (ast.Expression, error) {
 	return op, nil
 }
 
-func (p *Parser) parseExpressionList() []ast.Expression {
+func (p *parser) parseExpressionList() []ast.Expression {
 	p.trace("parsing expression list")
 	list := []ast.Expression{}
 
@@ -69,7 +69,7 @@ func (p *Parser) parseExpressionList() []ast.Expression {
 	return list
 }
 
-func (p *Parser) parseListDeclaration() (*ast.ListDeclaration, error) {
+func (p *parser) parseListDeclaration() (*ast.ListDeclaration, error) {
 	decl := &ast.ListDeclaration{Token: p.curToken}
 	if p.curTokenIs(token.LBRACKET) {
 		p.nextToken()

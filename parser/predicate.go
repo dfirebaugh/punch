@@ -3,17 +3,26 @@ package parser
 import "github.com/dfirebaugh/punch/token"
 
 // expectPeek checks if the next token is of the expected type.
-func (p *Parser) expectPeek(expectedType token.Type) bool {
+func (p *parser) expectPeek(expectedType token.Type) bool {
 	return p.peekTokenIs(expectedType)
 }
 
-func (p *Parser) expectCurrentTokenIs(expectedType token.Type) bool {
+// expect that curtoken is as specified and calls nextToken if true
+func (p *parser) expectAndConsumeCurrentTokenIs(expectedType token.Type) bool {
+	if p.curTokenIs(expectedType) {
+		p.nextToken()
+		return true
+	}
+	return false
+}
+
+func (p *parser) expectCurrentTokenIs(expectedType token.Type) bool {
 	return p.curTokenIs(expectedType)
 }
 
 // peekTokenAfter checks if the token after the expectedType token is of a specific type.
 // It temporarily advances the parser to check the token and then restores the parser's state.
-func (p *Parser) peekTokenAfter(expectedType token.Type) bool {
+func (p *parser) peekTokenAfter(expectedType token.Type) bool {
 	curToken := p.curToken
 	peekToken := p.peekToken
 	p.l.SaveState()
@@ -29,28 +38,32 @@ func (p *Parser) peekTokenAfter(expectedType token.Type) bool {
 }
 
 // curTokenIs checks if the current token is of the specified type.
-func (p *Parser) curTokenIs(t token.Type) bool {
+func (p *parser) curTokenIs(t token.Type) bool {
 	return p.curToken.Type == t
 }
 
 // peekTokenIs checks if the peek token is of the specified type.
-func (p *Parser) peekTokenIs(t token.Type) bool {
+func (p *parser) peekTokenIs(t token.Type) bool {
 	return string(p.peekToken.Type) == string(t)
 }
 
-func (p *Parser) isFunctionDeclaration() bool {
-	return p.curTokenIs(token.FN) || p.curTokenIs(token.PUB) && p.isTypeToken(p.peekToken) && p.peekTokenAfter(token.IDENTIFIER) || p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.LPAREN)
+func (p *parser) isFunctionDeclaration() bool {
+	if p.curTokenIs(token.PUB) {
+		return (p.peekTokenIs(token.FUNCTION) || p.isTypeToken(p.peekToken)) && p.peekTokenAfter(token.IDENTIFIER)
+	}
+
+	return (p.curTokenIs(token.FUNCTION) || p.isTypeToken(p.curToken)) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.LPAREN)
 }
 
-func (p *Parser) isVariableDeclaration() bool {
+func (p *parser) isVariableDeclaration() bool {
 	return p.isTypeToken(p.curToken) && p.peekTokenIs(token.IDENTIFIER) && p.peekTokenAfter(token.ASSIGN)
 }
 
-func (p *Parser) isInControlStatement() bool {
+func (p *parser) isInControlStatement() bool {
 	return p.controlDepth > 0
 }
 
-func (p *Parser) isTypeToken(t token.Token) bool {
+func (p *parser) isTypeToken(t token.Token) bool {
 	switch t.Type {
 	case token.STRING,
 		token.BOOL,
@@ -71,11 +84,11 @@ func (p *Parser) isTypeToken(t token.Token) bool {
 	return exists
 }
 
-func (p *Parser) isBooleanLiteral() bool {
+func (p *parser) isBooleanLiteral() bool {
 	return p.curToken.Literal == token.TRUE || p.curToken.Literal == token.FALSE
 }
 
-func (p *Parser) isBinaryOperator(t token.Token) bool {
+func (p *parser) isBinaryOperator(t token.Token) bool {
 	return t.Type == token.MINUS ||
 		t.Type == token.PLUS ||
 		t.Type == token.ASTERISK ||
@@ -91,35 +104,39 @@ func (p *Parser) isBinaryOperator(t token.Token) bool {
 		t.Type == token.OR
 }
 
-func (p *Parser) isStructLiteral() bool {
+func (p *parser) isBinaryExpression() bool {
+	return (p.curTokenIs(token.IDENTIFIER) || p.curTokenIs(token.NUMBER) || p.curTokenIs(token.FLOAT)) && p.isBinaryOperator(p.peekToken)
+}
+
+func (p *parser) isStructLiteral() bool {
 	return p.peekTokenIs(token.LBRACE) && !p.isInControlStatement()
 }
 
-func (p *Parser) isIdentifier(t token.Type) bool {
+func (p *parser) isIdentifier(t token.Type) bool {
 	return t == token.IDENTIFIER
 }
 
-func (p *Parser) isAssignmentExpression() bool {
+func (p *parser) isAssignmentExpression() bool {
 	return p.peekToken.Type == token.ASSIGN || p.peekToken.Type == token.INFER
 }
 
-func (p *Parser) isFunctionCall() bool {
+func (p *parser) isFunctionCall() bool {
 	return p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LPAREN)
 }
 
-func (p *Parser) isNumber() bool {
+func (p *parser) isNumber() bool {
 	return p.curTokenIs(token.NUMBER) || p.curTokenIs(token.FLOAT)
 }
 
-func (p *Parser) isIndexExpression() bool {
+func (p *parser) isIndexExpression() bool {
 	return p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.LBRACKET)
 }
 
-func (p *Parser) isStructType(t token.Token) bool {
+func (p *parser) isStructType(t token.Token) bool {
 	_, exists := p.structDefinitions[t.Literal]
 	return exists
 }
 
-func (p *Parser) isStructAccess() bool {
+func (p *parser) isStructAccess() bool {
 	return p.curTokenIs(token.IDENTIFIER) && p.peekTokenIs(token.DOT) && p.peekTokenAfter(token.IDENTIFIER)
 }

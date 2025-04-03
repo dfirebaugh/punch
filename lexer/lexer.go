@@ -17,6 +17,7 @@ func New(filename string, source string) *Lexer {
 	var s scanner.Scanner
 
 	s.Init(strings.NewReader(source))
+	// s.Whitespace ^= 1<<'\t' | 1<<'\n' // don't skip tabs and new lines
 
 	s.Filename = filename
 
@@ -52,7 +53,16 @@ func (l *Lexer) NextToken() token.Token {
 		Literal:  l.scanner.TokenText(),
 		Position: l.scanner.Position,
 	}
-	t.Type = l.evaluateType(t)
+
+	switch tok {
+	// case '\n':
+	// 	t.Type = token.NEWLINE
+	// case ' ', '\t':
+	// 	return l.NextToken() // skip spaces and tabs
+	default:
+		t.Type = l.evaluateType(t)
+	}
+
 	if l.isMultiCharOperator(t.Type) {
 		t.Literal = string(t.Type)
 	}
@@ -146,7 +156,7 @@ func (l *Lexer) evaluateMultiCharOperators(literal string) token.Type {
 			l.scanner.Scan()
 			return token.NOT_EQ
 		}
-		return token.UNKNOWN
+		return token.BANG
 	case token.GT:
 		if l.scanner.Peek() == rune('=') {
 			l.scanner.Scan()
@@ -164,22 +174,24 @@ func (l *Lexer) evaluateMultiCharOperators(literal string) token.Type {
 			l.scanner.Scan()
 			return token.OR
 		}
-		return token.UNKNOWN
+		return token.PIPE
 	case token.AMPERSAND:
 		if l.scanner.Peek() == rune('&') {
 			l.scanner.Scan()
 			return token.AND
 		}
-		return token.UNKNOWN
+		return token.AMPERSAND
 	case token.SLASH:
 		if l.scanner.Peek() == rune('=') {
 			l.scanner.Scan()
 			return token.SLASH_EQUALS
 		}
 		if l.scanner.Peek() == rune('/') {
+			l.scanner.Scan()
 			return token.SLASH_SLASH
 		}
 		if l.scanner.Peek() == rune('*') {
+			l.scanner.Scan()
 			return token.SLASH_ASTERISK
 		}
 		return token.SLASH
@@ -226,6 +238,14 @@ func (l Lexer) evaluateSpecialCharacter(literal string) token.Type {
 		return token.GT
 	case token.LT:
 		return token.LT
+	// case token.OR:
+	// 	return token.OR
+	// case token.AND:
+	// 	return token.AND
+	case token.PIPE:
+		return token.PIPE
+	case token.AMPERSAND:
+		return token.AMPERSAND
 	case token.ASSIGN:
 		return token.ASSIGN
 	case token.COMMA:
@@ -294,8 +314,6 @@ func (l *Lexer) evaluateKeyword(literal string) token.Type {
 	case token.Keywords[token.IMPORT]:
 		return token.IMPORT
 	case token.Keywords[token.FUNCTION]:
-		return token.FUNCTION
-	case token.Keywords[token.FN]:
 		return token.FUNCTION
 	case token.Keywords[token.LET]:
 		return token.LET

@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/dfirebaugh/punch/emitters/wat"
+	"github.com/dfirebaugh/punch/codegen/wat"
 	"github.com/dfirebaugh/punch/lexer"
 	"github.com/dfirebaugh/punch/parser"
 

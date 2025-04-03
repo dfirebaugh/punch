@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"syscall/js"
 
-	js_gen "github.com/dfirebaugh/punch/emitters/js"
-	"github.com/dfirebaugh/punch/emitters/wat"
+	js_gen "github.com/dfirebaugh/punch/codegen/js"
+	"github.com/dfirebaugh/punch/codegen/wat"
 	"github.com/dfirebaugh/punch/lexer"
 	"github.com/dfirebaugh/punch/parser"
 	"github.com/dfirebaugh/punch/token"

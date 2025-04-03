@@ -244,3 +244,20 @@ func TestLexFunctionDeclaration(t *testing.T) {
 		}
 	}
 }
+
+func TestLexOrOperator(t *testing.T) {
+	input := "true || false"
+	expectedTokens := []token.Token{
+		{Type: token.TRUE, Literal: "true", Position: scanner.Position{Line: 1, Column: 1, Offset: 0}},
+		{Type: token.OR, Literal: "||", Position: scanner.Position{Line: 1, Column: 6, Offset: 5}},
+		{Type: token.FALSE, Literal: "false", Position: scanner.Position{Line: 1, Column: 9, Offset: 8}},
+		{Type: token.EOF},
+	}
+
+	l := New("", input)
+	tokens := l.Run()
+
+	if !reflect.DeepEqual(tokens, expectedTokens) {
+		t.Errorf("Expected tokens %v, but got %v", expectedTokens, tokens)
+	}
+}

@@ -5,9 +5,28 @@ import (
 	"github.com/dfirebaugh/punch/token"
 )
 
-func (p *Parser) parseFunctionStatement() (*ast.FunctionStatement, error) {
+func (p *parser) parseFunction() (ast.Expression, error) {
+	if !p.isFunctionDeclaration() {
+		p.trace("expected a function definition")
+		return nil, nil
+	}
+
+	return p.parseFunctionStatement()
+}
+
+func (p *parser) parseFunctionName() (*ast.Identifier, error) {
+	if !p.curTokenIs(token.IDENTIFIER) {
+		return nil, p.error("expected function name")
+	}
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	p.nextToken()
+	return ident, nil
+}
+
+func (p *parser) parseFunctionStatement() (*ast.FunctionStatement, error) {
 	var isExported bool
 	var returnType *ast.Identifier
+	defer p.trace("end of parsing function statement")
 
 	if p.curToken.Type == token.PUB {
 		isExported = true
@@ -23,14 +42,13 @@ func (p *Parser) parseFunctionStatement() (*ast.FunctionStatement, error) {
 		return nil, p.errorf("expected return type or 'fn', got %s instead", p.curToken.Type)
 	}
 
-	ident, err := p.parseIdentifier()
+	ident, err := p.parseFunctionName()
 	if err != nil {
 		return nil, err
 	}
 	if ident == nil {
 		return nil, p.error("expected function name")
 	}
-	p.nextToken()
 
 	params, err := p.parseFunctionParameters()
 	if err != nil {
@@ -52,23 +70,24 @@ func (p *Parser) parseFunctionStatement() (*ast.FunctionStatement, error) {
 	stmt := &ast.FunctionStatement{
 		IsExported: isExported,
 		ReturnType: returnType,
-		Name:       ident.(*ast.Identifier),
+		Name:       ident,
 		Parameters: params,
 		Body:       body,
 	}
 
-	p.trace("end of parsing function statement")
 	return stmt, nil
 }
 
-func (p *Parser) parseFunctionParameters() ([]*ast.Parameter, error) {
+func (p *parser) parseFunctionParameters() ([]*ast.Parameter, error) {
 	parameters := []*ast.Parameter{}
 
 	if !p.expectCurrentTokenIs(token.LPAREN) {
 		return parameters, nil
 	}
 
-	p.nextToken()
+	if p.curTokenIs(token.LPAREN) {
+		p.nextToken()
+	}
 
 	for !p.curTokenIs(token.RPAREN) {
 		param, err := p.parseFunctionParameter()
@@ -92,7 +111,7 @@ func (p *Parser) parseFunctionParameters() ([]*ast.Parameter, error) {
 	return parameters, nil
 }
 
-func (p *Parser) parseFunctionParameter() (*ast.Parameter, error) {
+func (p *parser) parseFunctionParameter() (*ast.Parameter, error) {
 	if !p.isTypeToken(p.curToken) {
 		return nil, p.errorf("expected type token, got %s instead", p.curToken.Type)
 	}
@@ -118,9 +137,12 @@ func (p *Parser) parseFunctionParameter() (*ast.Parameter, error) {
 	}, nil
 }
 
-func (p *Parser) parseFunctionCall(function ast.Expression) (ast.Expression, error) {
+func (p *parser) parseFunctionCall(function ast.Expression) (ast.Expression, error) {
 	var err error
 	p.trace("parsing function call", function.TokenLiteral(), p.peekToken.Literal)
+	if function == nil {
+		println("function is nil before creating FunctionCall")
+	}
 	exp := &ast.FunctionCall{
 		FunctionName: function.TokenLiteral(),
 		Token:        p.curToken,
@@ -130,12 +152,13 @@ func (p *Parser) parseFunctionCall(function ast.Expression) (ast.Expression, err
 		p.nextToken()
 	}
 	if p.curTokenIs(token.LPAREN) {
-		p.nextToken() // consume (
+		p.nextToken()
 	}
 	if p.curTokenIs(token.RPAREN) {
 		p.nextToken()
-		return exp, err
+		return exp, nil
 	}
+
 	exp.Arguments, err = p.parseFunctionCallArguments()
 
 	p.trace("parsed function call after args", p.curToken.Literal, p.peekToken.Literal)
@@ -143,19 +166,25 @@ func (p *Parser) parseFunctionCall(function ast.Expression) (ast.Expression, err
 	return exp, err
 }
 
-func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
+func (p *parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 	args := []ast.Expression{}
 	p.trace("parsing func call args beginning", p.curToken.Literal, p.peekToken.Literal)
+	defer p.trace("parseFunctionCallArguments-end:", p.curToken.Literal, p.peekToken.Literal)
 	if p.curTokenIs(token.LPAREN) {
 		p.nextToken()
 		p.trace("consume LPAREN", p.curToken.Literal, p.peekToken.Literal)
 	}
-
-	if p.curTokenIs(token.RPAREN) {
-		return args, nil
-	}
+	defer func() {
+		if p.curTokenIs(token.RPAREN) {
+			p.nextToken()
+		}
+	}()
 
 	p.trace("parseFunctionCallArguments before parse expression", p.curToken.Literal, p.peekToken.Literal)
+	if p.curTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args, nil
+	}
 	firstArg, err := p.parseExpression(LOWEST)
 	if err != nil {
 		return nil, err
@@ -163,20 +192,19 @@ func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 	if firstArg == nil {
 		return nil, p.error("could not parse first argument in function call")
 	}
-	p.trace("parseFunctionCallArguments: first arg", firstArg.String(), p.curToken.Literal, p.peekToken.Literal)
+	p.trace("parseFunctionCallArguments: first arg", firstArg.String(), p.peekToken.Literal)
 	args = append(args, firstArg)
-	if !p.curTokenIs(token.COMMA) {
-		// println("not comma", p.curToken.Literal, p.peekToken.Literal)
-		if p.curTokenIs(token.RPAREN) {
-			p.nextToken()
-		}
-		return args, nil
+
+	if !p.curTokenIs(token.COMMA) && !p.curTokenIs(token.RPAREN) {
+		p.nextToken()
 	}
 
 	for p.curTokenIs(token.COMMA) {
 		p.trace("parseFunctionCallArguments: consume COMMA", p.curToken.Literal, p.peekToken.Literal)
-		// consume the comma
-		if p.curTokenIs(token.COMMA) {
+		if p.curTokenIs(token.RPAREN) {
+			return args, nil
+		}
+		if p.curTokenIs(token.COMMA) && !p.peekTokenIs(token.RPAREN) {
 			p.nextToken()
 		}
 
@@ -189,16 +217,13 @@ func (p *Parser) parseFunctionCallArguments() ([]ast.Expression, error) {
 		}
 		p.trace("parseFunctionCallArguments: next arg", nextArg.String(), p.curToken.Literal, p.peekToken.Literal)
 		args = append(args, nextArg)
+		// p.nextToken()
 	}
 
-	p.trace("parseFunctionCallArguments: end", p.curToken.Literal, p.peekToken.Literal)
-	if p.curTokenIs(token.RPAREN) {
-		p.nextToken()
-	}
 	return args, nil
 }
 
-func (p *Parser) parseReturnStatement() (*ast.ReturnStatement, error) {
+func (p *parser) parseReturnStatement() (*ast.ReturnStatement, error) {
 	p.trace("parsing return statement", p.curToken.Literal)
 	stmt := &ast.ReturnStatement{Token: p.curToken}
 

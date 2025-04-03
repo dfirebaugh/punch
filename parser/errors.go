@@ -14,12 +14,12 @@ func init() {
 	logrus.SetLevel(logrus.ErrorLevel)
 }
 
-func (p *Parser) noPrefixParseFnError(t token.Type) {
+func (p *parser) noPrefixParseFnError(t token.Type) {
 	msg := fmt.Sprintf("%s:\tno prefix parse function for %s found", p.curToken.Position, t)
 	p.error(msg)
 }
 
-func (p *Parser) errorf(format string, args ...interface{}) error {
+func (p *parser) errorf(format string, args ...interface{}) error {
 	message := fmt.Sprintf(format, args...)
 	if !showFileName {
 		return fmt.Errorf("[%d:%d]: %s", p.curToken.Position.Line, p.curToken.Position.Column, message)
@@ -27,14 +27,14 @@ func (p *Parser) errorf(format string, args ...interface{}) error {
 	return fmt.Errorf("%s:[%d:%d]: %s", p.curToken.Position.Filename, p.curToken.Position.Line, p.curToken.Position.Column, message)
 }
 
-func (p *Parser) error(msg ...string) error {
+func (p *parser) error(msg ...string) error {
 	if !showFileName {
 		return fmt.Errorf("[%d:%d]: %s", p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
 	}
 	return fmt.Errorf("%s:[%d:%d]: %s", p.curToken.Position.Filename, p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
 }
 
-func (p *Parser) debug(msg ...string) {
+func (p *parser) debug(msg ...string) {
 	if !showFileName {
 		logrus.Debugf("[%d:%d]: %s", p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
 		return
@@ -42,7 +42,7 @@ func (p *Parser) debug(msg ...string) {
 	logrus.Debugf("%s:[%d:%d]: %s", p.curToken.Position.Filename, p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
 }
 
-func (p *Parser) trace(msg ...string) {
+func (p *parser) trace(msg ...string) {
 	if !showFileName {
 		logrus.Tracef("[%d:%d]: %s", p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
 		return
@@ -50,6 +50,6 @@ func (p *Parser) trace(msg ...string) {
 	logrus.Tracef("%s:[%d:%d]: %s", p.curToken.Position.Filename, p.curToken.Position.Line, p.curToken.Position.Column, strings.Join(msg, " "))
 }
 
-func (p *Parser) Errors() []string {
+func (p *parser) Errors() []string {
 	return p.errors
 }

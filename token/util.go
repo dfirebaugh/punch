@@ -18,7 +18,7 @@ func (t Token) IsKeyword() bool {
 
 func (t Token) IsOperator() bool {
 	switch t.Type {
-	case ASSIGN, PLUS, MINUS, ASTERISK, SLASH, EQ, NOT_EQ, LT, GT:
+	case ASSIGN, PLUS, MINUS, ASTERISK, SLASH, EQ, NOT_EQ, LT, GT, AND, OR:
 		return true
 	default:
 		return false

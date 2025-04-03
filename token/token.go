@@ -33,8 +33,10 @@ const (
 	ASSIGN          = "="
 	INFER           = ":="
 	PLUS            = "+"
+	PLUS_PLUS       = "++"
 	PLUS_EQUALS     = "+="
 	MINUS           = "-"
+	MINUS_MINUS     = "--"
 	MINUS_EQUALS    = "-="
 	ASTERISK        = "*"
 	ASTERISK_EQUALS = "*="
@@ -70,7 +72,6 @@ const (
 	RBRACKET = "]"
 
 	// Keywords
-	FN        = "FN"
 	FUNCTION  = "FUNCTION"
 	CONST     = "CONST"
 	LET       = "LET"
@@ -95,6 +96,9 @@ const (
 	FALSE = "false"
 
 	BANG = "!"
+
+	NEWLINE = "NEWLINE"
+	TAB     = "TAB"
 )
 
 const (
@@ -116,7 +120,7 @@ var Keywords = map[Type]string{
 	INTERFACE: "interface",
 	STRUCT:    "struct",
 	TEST:      "test",
-	FN:        "fn",
+	FUNCTION:  "fn",
 	ENUM:      "enum",
 	RETURN:    "return",
 	CONST:     "const",

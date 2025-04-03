@@ -146,10 +146,7 @@ type FunctionCall struct {
 func (f *FunctionCall) expressionNode() {}
 
 func (f *FunctionCall) TokenLiteral() string {
-	if f == nil {
-		return ""
-	}
-	return "function call"
+	return f.FunctionName
 }
 
 func (f *FunctionCall) String() string {
